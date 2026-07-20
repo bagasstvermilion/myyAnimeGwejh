@@ -1,16 +1,17 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { searchAnime, getTopAnime } from '../lib/jikan'
-import SearchBar from '../components/SearchBar'
-import AnimeGrid from '../components/AnimeGrid'
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { searchAnime, getTopAnime } from "../lib/jikan";
+import SearchBar from "../components/SearchBar";
+import AnimeGrid from "../components/AnimeGrid";
+import Spinner from "../components/Spinner";
 
 export default function Browse() {
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState("");
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: search ? ['search', search] : ['top-anime'],
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: search ? ["search", search] : ["top-anime"],
     queryFn: () => (search ? searchAnime(search) : getTopAnime()),
-  })
+  });
 
   return (
     <div className="mx-auto max-w-[1440px] px-8 lg:px-14 py-12">
@@ -25,17 +26,24 @@ export default function Browse() {
       </div>
 
       <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-zinc-400">
-        {search ? `Hasil untuk "${search}"` : 'Top Anime'}
+        {search ? `Hasil untuk "${search}"` : "Top Anime"}
       </h2>
 
-      {isLoading && <p className="text-zinc-400">Memuat...</p>}
+      {isLoading && <Spinner />}
       {isError && (
-        <p className="text-red-500">
-          Gagal memuat data, coba lagi sebentar (Jikan API punya rate limit).
-        </p>
+        <div className="flex flex-col items-start gap-2">
+          <p className="text-red-500">Gagal memuat data server.</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="rounded-full border border-zinc-200 bg-white px-4 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-300"
+          >
+            Coba lagi
+          </button>
+        </div>
       )}
 
       <AnimeGrid animeList={data?.data} />
     </div>
-  )
+  );
 }
