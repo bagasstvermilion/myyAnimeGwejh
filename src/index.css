@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --animate-poster-crossfade: poster-crossfade 31s ease-in-out infinite;
+  --animate-poster-float: poster-float 6.5s ease-in-out infinite;
+}
+
+html {
+  /* always reserve the scrollbar's width, so content doesn't shift
+     sideways whenever a page becomes just tall enough to need one */
+  scrollbar-gutter: stable;
+}
+
+body {
+  margin: 0;
+  background-color: #fafafa;
+  color: #18181b;
+  font-family: var(--font-sans);
+}
+
+/* Each poster gets a 6.2s "turn" within a shared 31s loop (5 turns):
+   invisible -> fade in (~3.2s) -> hold (~3s) -> fade out (~3.2s) -> invisible
+   until its turn comes back around. Every poster in a slot uses this exact
+   same keyframe, just phase-shifted via a negative animation-delay, so two
+   posters are always genuinely crossfading (one fading out while the next
+   fades in) with zero JS involved — nothing to swap, nothing to race. */
+@keyframes poster-crossfade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  10.32% {
+    opacity: 1;
+  }
+  20% {
+    opacity: 1;
+  }
+  30.32% {
+    opacity: 0;
+  }
+}
+
+/* subtle, continuous up/down drift applied to the poster wrapper (kept
+   separate from the poster's own rotate transform, and from the crossfade
+   opacity animation, so none of them fight over the `transform` property) */
+@keyframes poster-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
