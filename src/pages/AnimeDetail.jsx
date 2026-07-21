@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getAnimeById } from "../lib/anilist";
 import { gradientBorderStyle } from "../lib/gradientBorder";
@@ -17,6 +17,7 @@ function StatCard({ label, value }) {
 
 export default function AnimeDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["anime", id],
@@ -46,8 +47,9 @@ export default function AnimeDetail() {
 
   return (
     <div className="mx-auto max-w-[1440px] px-8 pb-16 pt-8 lg:px-14">
-      <Link
-        to="/browse"
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
         style={gradientBorderStyle()}
         className="mb-6 inline-flex cursor-pointer items-center gap-1 rounded-full py-1.5 pl-3 pr-4 text-sm font-medium text-zinc-900 transition hover:opacity-80"
       >
@@ -67,7 +69,7 @@ export default function AnimeDetail() {
           />
         </svg>
         Kembali
-      </Link>
+      </button>
 
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl">
