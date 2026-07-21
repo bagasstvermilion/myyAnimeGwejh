@@ -1,16 +1,41 @@
-# React + Vite
+# myyAnimeGwejh
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Personal anime tracker — tempat nyimpen catatan anime yang pernah ditonton, cari judul favorit, dan lihat apa yang lagi populer/tayang musim ini. Pastinya datanya realtime ygy
 
-Currently, two official plugins are available:
+## Preview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### Dashboard
 
-## React Compiler
+![Dashboard](src/assets/img/dashboard.png)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Browse
 
-## Expanding the Oxlint configuration
+![Browse](src/assets/img/browse.png)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Tech Stack
+
+- [React](https://react.dev/) + [Vite](https://vite.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [TanStack Query](https://tanstack.com/query) — data fetching & caching
+- [React Router](https://reactrouter.com/)
+- [AniList GraphQL API](rahasia xixixi) — sumber data anime
+- [Supabase](https://supabase.com/)
+
+## Menjalankan Secara Lokal
+
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
+```
+
+## Akses Web Disini
+
+```bash
+https://myy-anime-gwejh.vercel.app/
+```
