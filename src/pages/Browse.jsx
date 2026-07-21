@@ -1,17 +1,48 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { searchAnime, getTopAnime } from "../lib/anilist";
+import { searchAnime, getTopAnime, getSeasonAnime } from "../lib/anilist";
 import SearchBar from "../components/SearchBar";
 import AnimeGrid from "../components/AnimeGrid";
 import Spinner from "../components/Spinner";
 
+const TABS = [
+  { key: "top", label: "Top Ranking" },
+  { key: "season", label: "Musim Ini" },
+];
+
+// thin gradient border (matches the sakura logo's pink -> violet), with a
+// transparent-looking fill — the inner layer just matches the page
+// background so it reads as "see-through" rather than a solid pill
+function tabStyle(active) {
+  const innerFill = active ? "#f6effc" : "#fafafa";
+  return {
+    border: "1.5px solid transparent",
+    backgroundImage: `linear-gradient(${innerFill}, ${innerFill}), linear-gradient(135deg, #f472b6, #7c3aed)`,
+    backgroundOrigin: "border-box",
+    backgroundClip: "padding-box, border-box",
+  };
+}
+
 export default function Browse() {
   const [search, setSearch] = useState("");
+  const [tab, setTab] = useState("top");
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: search ? ["search", search] : ["top-anime"],
-    queryFn: () => (search ? searchAnime(search) : getTopAnime()),
+    queryKey: search ? ["search", search] : [tab === "season" ? "season-anime" : "top-anime"],
+    queryFn: () => {
+      if (search) return searchAnime(search);
+      return tab === "season" ? getSeasonAnime() : getTopAnime();
+    },
   });
+
+  function selectTab(key) {
+    setSearch("");
+    setTab(key);
+  }
+
+  const heading = search
+    ? `Hasil untuk "${search}"`
+    : TABS.find((t) => t.key === tab)?.label;
 
   return (
     <div className="mx-auto max-w-[1440px] px-8 lg:px-14 py-12">
@@ -23,10 +54,24 @@ export default function Browse() {
         <div className="mt-6">
           <SearchBar onSearch={setSearch} />
         </div>
+
+        <div className="mt-4 flex gap-2">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => selectTab(t.key)}
+              style={tabStyle(!search && tab === t.key)}
+              className="rounded-full px-4 py-1.5 text-sm font-medium text-zinc-900 transition"
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-zinc-400">
-        {search ? `Hasil untuk "${search}"` : "Top Anime"}
+        {heading}
       </h2>
 
       {isLoading && <Spinner />}
@@ -43,7 +88,7 @@ export default function Browse() {
         </div>
       )}
 
-      <AnimeGrid animeList={data?.data} showRank={!search} />
+      <AnimeGrid animeList={data?.data} showRank={!search && tab === "top"} />
     </div>
   );
 }
