@@ -16,9 +16,9 @@ Personal anime tracker. tempat nyimpen catatan anime yang pernah ditonton, cari 
 
 - [React](https://react.dev/) + [Vite](https://vite.dev/)
 - [Tailwind CSS](https://tailwindcss.com/)
-- [TanStack Query](https://tanstack.com/query) — data fetching & caching
+- [TanStack Query](https://tanstack.com/query)
 - [React Router](https://reactrouter.com/)
-- GraphQL API (rahasia xixixi) — sumber data anime
+- GraphQL API (rahasia xixixi)
 - [Supabase](https://supabase.com/)
 
 ## Menjalankan Secara Lokal
