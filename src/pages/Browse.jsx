@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import {
   searchAnime,
   getTopAnime,
@@ -23,9 +23,15 @@ function tabStyle(active) {
 }
 
 export default function Browse() {
-  const [search, setSearch] = useState("");
-  const [tab, setTab] = useState("top");
-  const [page, setPage] = useState(1);
+  // tab/search/page all live in the URL (not local state) so they survive
+  // navigating to an anime's detail page and back — otherwise Browse
+  // remounts fresh and silently resets to page 1 / the "top" tab
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const search = searchParams.get("search") ?? "";
+  const rawTab = searchParams.get("tab");
+  const tab = TABS.some((t) => t.key === rawTab) ? rawTab : "top";
+  const page = Number(searchParams.get("page")) || 1;
 
   const activeTab = TABS.find((t) => t.key === tab);
 
@@ -34,19 +40,22 @@ export default function Browse() {
     queryFn: () => (search ? searchAnime(search, page) : activeTab.fetcher(page)),
   });
 
+  function updateParams({ tab: nextTab = tab, search: nextSearch = search, page: nextPage = 1 }) {
+    const params = { tab: nextTab, page: String(nextPage) };
+    if (nextSearch) params.search = nextSearch;
+    setSearchParams(params);
+  }
+
   function handleSearch(query) {
-    setSearch(query);
-    setPage(1);
+    updateParams({ search: query, page: 1 });
   }
 
   function selectTab(key) {
-    setSearch("");
-    setTab(key);
-    setPage(1);
+    updateParams({ tab: key, search: "", page: 1 });
   }
 
   function goToPage(nextPage) {
-    setPage(nextPage);
+    updateParams({ page: nextPage });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -60,7 +69,7 @@ export default function Browse() {
           Cari judul favorit kamu atau lihat anime paling populer.
         </p>
         <div className="mt-6">
-          <SearchBar onSearch={handleSearch} />
+          <SearchBar onSearch={handleSearch} defaultValue={search} />
         </div>
 
         <div className="mt-4 flex gap-2">

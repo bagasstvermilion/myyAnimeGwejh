@@ -21,6 +21,18 @@ export default function Pagination({ page, lastPage, hasNextPage, onChange }) {
       <button
         type="button"
         disabled={page <= 1}
+        onClick={() => onChange(1)}
+        aria-label="Halaman pertama"
+        className="cursor-pointer px-3 py-2 transition hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        &laquo;
+      </button>
+
+      <span className="h-5 w-px bg-zinc-200" />
+
+      <button
+        type="button"
+        disabled={page <= 1}
         onClick={() => onChange(page - 1)}
         className="cursor-pointer px-4 py-2 transition hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30"
       >
