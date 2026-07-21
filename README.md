@@ -1,6 +1,6 @@
 # myyAnimeGwejh
 
-Personal anime tracker — tempat nyimpen catatan anime yang pernah ditonton, cari judul favorit, dan lihat apa yang lagi populer/tayang musim ini. Pastinya datanya realtime ygy
+Personal anime tracker. tempat nyimpen catatan anime yang pernah ditonton, cari judul favorit, dan lihat apa yang lagi populer/tayang musim ini. Pastinya datanya realtime ygy
 
 ## Preview
 
