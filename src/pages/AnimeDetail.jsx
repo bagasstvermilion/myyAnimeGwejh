@@ -1,7 +1,10 @@
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getAnimeById } from "../lib/anilist";
 import { gradientBorderStyle } from "../lib/gradientBorder";
+import { translateText } from "../lib/translate";
+import translateIcon from "../assets/img/translate-icon.png";
 import Spinner from "../components/Spinner";
 
 function StatCard({ label, value }) {
@@ -23,6 +26,34 @@ export default function AnimeDetail() {
     queryKey: ["anime", id],
     queryFn: () => getAnimeById(id),
   });
+
+  const [translated, setTranslated] = useState(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState(false);
+
+  // reset the translation state whenever the user opens a different anime
+  useEffect(() => {
+    setTranslated(null);
+    setTranslateError(false);
+  }, [id]);
+
+  async function handleTranslate() {
+    if (translated) {
+      setTranslated(null);
+      return;
+    }
+
+    setIsTranslating(true);
+    setTranslateError(false);
+    try {
+      const result = await translateText(data.data.synopsis);
+      setTranslated(result);
+    } catch {
+      setTranslateError(true);
+    } finally {
+      setIsTranslating(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -123,12 +154,49 @@ export default function AnimeDetail() {
       {/* synopsis + metadata */}
       <div className="mt-10 grid gap-10 pl-4 lg:grid-cols-[1fr_260px]">
         <div>
-          <h2 className="font-display text-lg font-semibold text-zinc-900">
-            Sinopsis
-          </h2>
+          <div className="flex max-w-2xl items-center justify-between gap-3">
+            <h2 className="font-display text-lg font-semibold text-zinc-900">
+              Sinopsis
+            </h2>
+            {anime.synopsis && (
+              <button
+                type="button"
+                onClick={handleTranslate}
+                disabled={isTranslating}
+                aria-label={translated ? "Lihat teks asli" : "Terjemahkan sinopsis"}
+                className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-full transition hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50 ${
+                  translated ? "bg-violet-50" : ""
+                }`}
+              >
+                {isTranslating ? (
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-200 border-t-violet-600" />
+                ) : (
+                  <span
+                    aria-hidden
+                    className="h-7 w-7 bg-gradient-to-br from-pink-400 to-violet-600"
+                    style={{
+                      WebkitMaskImage: `url(${translateIcon})`,
+                      maskImage: `url(${translateIcon})`,
+                      WebkitMaskSize: "contain",
+                      maskSize: "contain",
+                      WebkitMaskRepeat: "no-repeat",
+                      maskRepeat: "no-repeat",
+                      WebkitMaskPosition: "center",
+                      maskPosition: "center",
+                    }}
+                  />
+                )}
+              </button>
+            )}
+          </div>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-600">
-            {anime.synopsis || "Belum ada sinopsis."}
+            {translated || anime.synopsis || "Belum ada sinopsis."}
           </p>
+          {translateError && (
+            <p className="mt-2 text-xs text-red-500">
+              Gagal menerjemahkan, coba lagi.
+            </p>
+          )}
         </div>
 
         <aside className="space-y-4 text-sm">
