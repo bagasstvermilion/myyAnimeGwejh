@@ -2,15 +2,25 @@
 
 Personal anime tracker. tempat nyimpen catatan anime yang pernah ditonton, cari judul favorit, dan lihat apa yang lagi populer/tayang musim ini. Pastinya datanya realtime ygy
 
+## Akses Web Disini
+
+```bash
+https://myy-anime-gwejh.vercel.app/
+```
+
 ## Preview
 
 ### Dashboard
 
 ![Dashboard](src/assets/img/dashboard.png)
 
-### Browse
+### Browse Anime
 
 ![Browse](src/assets/img/browse.png)
+
+### Detail Anime
+
+![Browse](src/assets/img/detailAnime.png)
 
 ## Tech Stack
 
@@ -32,10 +42,4 @@ npm run dev
 
 ```bash
 npm run build
-```
-
-## Akses Web Disini
-
-```bash
-https://myy-anime-gwejh.vercel.app/
 ```
