@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getTopAnime } from '../lib/jikan'
+import { getTopAnime } from '../lib/anilist'
 import DotDecoration from './DotDecoration'
 
 const LAYOUT = [

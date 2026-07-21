@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { searchAnime, getTopAnime } from "../lib/jikan";
+import { searchAnime, getTopAnime } from "../lib/anilist";
 import SearchBar from "../components/SearchBar";
 import AnimeGrid from "../components/AnimeGrid";
 import Spinner from "../components/Spinner";
@@ -43,7 +43,7 @@ export default function Browse() {
         </div>
       )}
 
-      <AnimeGrid animeList={data?.data} />
+      <AnimeGrid animeList={data?.data} showRank={!search} />
     </div>
   );
 }

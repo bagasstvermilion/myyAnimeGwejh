@@ -40,7 +40,7 @@ export default function Navbar() {
   }, [activeIndex]);
 
   return (
-    <header className="sticky top-0 z-10 border-b border-zinc-100 bg-white/80 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-zinc-100 bg-white/80 backdrop-blur">
       <nav className="mx-auto flex max-w-[1440px] items-center justify-between px-8 py-4 lg:px-14">
         <NavLink to="/" className="flex items-center gap-2">
           <img src={logo} alt="" className="h-8 w-8" />

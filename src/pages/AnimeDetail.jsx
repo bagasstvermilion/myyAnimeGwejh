@@ -1,11 +1,11 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getAnimeById } from '../lib/jikan'
+import { getAnimeById } from '../lib/anilist'
 import Spinner from '../components/Spinner'
 
 function StatCard({ label, value }) {
   return (
-    <div className="rounded-2xl bg-white p-4 ring-1 ring-zinc-100">
+    <div className="rounded-2xl bg-white p-4 shadow-md ring-1 ring-zinc-100">
       <dt className="text-xs uppercase tracking-wide text-zinc-400">{label}</dt>
       <dd className="mt-1 text-lg font-semibold text-zinc-900">{value ?? '-'}</dd>
     </div>
@@ -95,7 +95,7 @@ export default function AnimeDetail() {
         <StatCard label="Episode" value={anime.episodes} />
         <StatCard label="Durasi" value={anime.duration} />
         <StatCard label="Status" value={anime.status} />
-        <StatCard label="Rating" value={anime.rating?.split(' - ')[0]} />
+        <StatCard label="Tipe" value={anime.type} />
       </dl>
 
       {/* synopsis + metadata */}
