@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { searchAnime, getTopAnime, getSeasonAnime } from "../lib/anilist";
+import { gradientBorderStyle } from "../lib/gradientBorder";
 import SearchBar from "../components/SearchBar";
 import AnimeGrid from "../components/AnimeGrid";
+import Pagination from "../components/Pagination";
 import Spinner from "../components/Spinner";
 
 const TABS = [
@@ -10,34 +12,39 @@ const TABS = [
   { key: "season", label: "Musim Ini" },
 ];
 
-// thin gradient border (matches the sakura logo's pink -> violet), with a
-// transparent-looking fill — the inner layer just matches the page
-// background so it reads as "see-through" rather than a solid pill
 function tabStyle(active) {
-  const innerFill = active ? "#f6effc" : "#fafafa";
-  return {
-    border: "1.5px solid transparent",
-    backgroundImage: `linear-gradient(${innerFill}, ${innerFill}), linear-gradient(135deg, #f472b6, #7c3aed)`,
-    backgroundOrigin: "border-box",
-    backgroundClip: "padding-box, border-box",
-  };
+  return gradientBorderStyle(active ? "#f6effc" : "#fafafa");
 }
 
 export default function Browse() {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("top");
+  const [page, setPage] = useState(1);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: search ? ["search", search] : [tab === "season" ? "season-anime" : "top-anime"],
+    queryKey: search
+      ? ["search", search, page]
+      : [tab === "season" ? "season-anime" : "top-anime", page],
     queryFn: () => {
-      if (search) return searchAnime(search);
-      return tab === "season" ? getSeasonAnime() : getTopAnime();
+      if (search) return searchAnime(search, page);
+      return tab === "season" ? getSeasonAnime(page) : getTopAnime(page);
     },
   });
+
+  function handleSearch(query) {
+    setSearch(query);
+    setPage(1);
+  }
 
   function selectTab(key) {
     setSearch("");
     setTab(key);
+    setPage(1);
+  }
+
+  function goToPage(nextPage) {
+    setPage(nextPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const heading = search
@@ -52,7 +59,7 @@ export default function Browse() {
           Cari judul favorit kamu atau lihat anime paling populer.
         </p>
         <div className="mt-6">
-          <SearchBar onSearch={setSearch} />
+          <SearchBar onSearch={handleSearch} />
         </div>
 
         <div className="mt-4 flex gap-2">
@@ -88,7 +95,22 @@ export default function Browse() {
         </div>
       )}
 
-      <AnimeGrid animeList={data?.data} showRank={!search && tab === "top"} />
+      <AnimeGrid
+        animeList={data?.data}
+        showRank={!search && tab === "top"}
+        rankOffset={(page - 1) * 24}
+      />
+
+      {!isLoading && !isError && data?.data?.length > 0 && (
+        <div className="mt-10 flex justify-center">
+          <Pagination
+            page={page}
+            lastPage={data?.pageInfo?.lastPage}
+            hasNextPage={data?.pageInfo?.hasNextPage}
+            onChange={goToPage}
+          />
+        </div>
+      )}
     </div>
   );
 }

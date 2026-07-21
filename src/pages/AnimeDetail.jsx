@@ -1,31 +1,34 @@
-import { useParams, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { getAnimeById } from '../lib/anilist'
-import Spinner from '../components/Spinner'
+import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { getAnimeById } from "../lib/anilist";
+import { gradientBorderStyle } from "../lib/gradientBorder";
+import Spinner from "../components/Spinner";
 
 function StatCard({ label, value }) {
   return (
     <div className="rounded-2xl bg-white p-4 shadow-md ring-1 ring-zinc-100">
       <dt className="text-xs uppercase tracking-wide text-zinc-400">{label}</dt>
-      <dd className="mt-1 text-lg font-semibold text-zinc-900">{value ?? '-'}</dd>
+      <dd className="mt-1 text-lg font-semibold text-zinc-900">
+        {value ?? "-"}
+      </dd>
     </div>
-  )
+  );
 }
 
 export default function AnimeDetail() {
-  const { id } = useParams()
+  const { id } = useParams();
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['anime', id],
+    queryKey: ["anime", id],
     queryFn: () => getAnimeById(id),
-  })
+  });
 
   if (isLoading) {
     return (
       <div className="mx-auto max-w-[1440px] px-8 lg:px-14">
         <Spinner label="Memuat detail anime..." />
       </div>
-    )
+    );
   }
 
   if (isError || !data?.data) {
@@ -33,20 +36,37 @@ export default function AnimeDetail() {
       <p className="mx-auto max-w-[1440px] px-8 lg:px-14 py-12 text-red-500">
         Gagal memuat detail anime.
       </p>
-    )
+    );
   }
 
-  const anime = data.data
-  const cover = anime.images?.webp?.large_image_url || anime.images?.webp?.image_url
-  const studios = anime.studios?.map((s) => s.name).join(', ')
+  const anime = data.data;
+  const cover =
+    anime.images?.webp?.large_image_url || anime.images?.webp?.image_url;
+  const studios = anime.studios?.map((s) => s.name).join(", ");
 
   return (
     <div className="mx-auto max-w-[1440px] px-8 pb-16 pt-8 lg:px-14">
       <Link
         to="/browse"
-        className="mb-6 inline-flex items-center gap-1 text-sm text-violet-600 hover:underline"
+        style={gradientBorderStyle()}
+        className="mb-6 inline-flex cursor-pointer items-center gap-1 rounded-full py-1.5 pl-3 pr-4 text-sm font-medium text-zinc-900 transition hover:opacity-80"
       >
-        &larr; Kembali
+        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+          <defs>
+            <linearGradient id="back-chevron-gradient" x1="0" y1="0" x2="24" y2="24">
+              <stop offset="0" stopColor="#f472b6" />
+              <stop offset="1" stopColor="#7c3aed" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M15 5l-7 7 7 7"
+            stroke="url(#back-chevron-gradient)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        Kembali
       </Link>
 
       {/* hero */}
@@ -101,9 +121,11 @@ export default function AnimeDetail() {
       {/* synopsis + metadata */}
       <div className="mt-10 grid gap-10 pl-4 lg:grid-cols-[1fr_260px]">
         <div>
-          <h2 className="font-display text-lg font-semibold text-zinc-900">Sinopsis</h2>
+          <h2 className="font-display text-lg font-semibold text-zinc-900">
+            Sinopsis
+          </h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-600">
-            {anime.synopsis || 'Belum ada sinopsis.'}
+            {anime.synopsis || "Belum ada sinopsis."}
           </p>
         </div>
 
@@ -123,11 +145,13 @@ export default function AnimeDetail() {
           {anime.aired?.string && (
             <div>
               <p className="text-zinc-400">Tayang</p>
-              <p className="mt-0.5 font-medium text-zinc-900">{anime.aired.string}</p>
+              <p className="mt-0.5 font-medium text-zinc-900">
+                {anime.aired.string}
+              </p>
             </div>
           )}
         </aside>
       </div>
     </div>
-  )
+  );
 }

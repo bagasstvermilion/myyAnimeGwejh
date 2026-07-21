@@ -105,7 +105,12 @@ async function anilistFetch(query, variables) {
 export async function searchAnime(query, page = 1) {
   const gql = `
     query ($search: String, $page: Int) {
-      Page(page: $page, perPage: 25) {
+      Page(page: $page, perPage: 24) {
+        pageInfo {
+          currentPage
+          lastPage
+          hasNextPage
+        }
         media(search: $search, type: ANIME, isAdult: false, sort: SEARCH_MATCH) {
           ${MEDIA_FIELDS}
         }
@@ -113,21 +118,26 @@ export async function searchAnime(query, page = 1) {
     }
   `
   const data = await anilistFetch(gql, { search: query, page })
-  return { data: data.Page.media.map(normalize) }
+  return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 
-export async function getTopAnime(page = 1) {
+export async function getTopAnime(page = 1, perPage = 24) {
   const gql = `
-    query ($page: Int) {
-      Page(page: $page, perPage: 25) {
+    query ($page: Int, $perPage: Int) {
+      Page(page: $page, perPage: $perPage) {
+        pageInfo {
+          currentPage
+          lastPage
+          hasNextPage
+        }
         media(type: ANIME, isAdult: false, sort: SCORE_DESC) {
           ${MEDIA_FIELDS}
         }
       }
     }
   `
-  const data = await anilistFetch(gql, { page })
-  return { data: data.Page.media.map(normalize) }
+  const data = await anilistFetch(gql, { page, perPage })
+  return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 
 function getCurrentSeason() {
@@ -144,7 +154,12 @@ export async function getSeasonAnime(page = 1) {
   const { season, year } = getCurrentSeason()
   const gql = `
     query ($page: Int, $season: MediaSeason, $seasonYear: Int) {
-      Page(page: $page, perPage: 25) {
+      Page(page: $page, perPage: 24) {
+        pageInfo {
+          currentPage
+          lastPage
+          hasNextPage
+        }
         media(
           season: $season
           seasonYear: $seasonYear
@@ -158,7 +173,7 @@ export async function getSeasonAnime(page = 1) {
     }
   `
   const data = await anilistFetch(gql, { page, season, seasonYear: year })
-  return { data: data.Page.media.map(normalize) }
+  return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 
 export async function getAnimeById(id) {
