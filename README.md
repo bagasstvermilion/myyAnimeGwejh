@@ -18,7 +18,7 @@ Personal anime tracker. tempat nyimpen catatan anime yang pernah ditonton, cari 
 - [Tailwind CSS](https://tailwindcss.com/)
 - [TanStack Query](https://tanstack.com/query) — data fetching & caching
 - [React Router](https://reactrouter.com/)
-- [AniList GraphQL API](rahasia xixixi) — sumber data anime
+- GraphQL API (rahasia xixixi) — sumber data anime
 - [Supabase](https://supabase.com/)
 
 ## Menjalankan Secara Lokal
