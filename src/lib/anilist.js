@@ -121,10 +121,10 @@ export async function searchAnime(query, page = 1) {
   return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 
-export async function getTopAnime(page = 1) {
+export async function getTopAnime(page = 1, perPage = 24) {
   const gql = `
-    query ($page: Int) {
-      Page(page: $page, perPage: 24) {
+    query ($page: Int, $perPage: Int) {
+      Page(page: $page, perPage: $perPage) {
         pageInfo {
           currentPage
           lastPage
@@ -136,7 +136,7 @@ export async function getTopAnime(page = 1) {
       }
     }
   `
-  const data = await anilistFetch(gql, { page })
+  const data = await anilistFetch(gql, { page, perPage })
   return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 

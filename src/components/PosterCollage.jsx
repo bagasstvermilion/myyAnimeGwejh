@@ -20,7 +20,11 @@ const FLOAT_STAGGER_SECONDS = 0.7
 export default function PosterCollage() {
   const { data, isLoading } = useQuery({
     queryKey: ['top-anime', 'hero'],
-    queryFn: () => getTopAnime(1),
+    // fetch a fixed 25 (5 slots x 5 rotations) regardless of what other
+    // pages ask for — the poster-crossfade keyframes assume exactly 5
+    // turns per loop, so a different pool size leaves a gap with nothing
+    // visible partway through the cycle
+    queryFn: () => getTopAnime(1, 25),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
