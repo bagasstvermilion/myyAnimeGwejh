@@ -2,6 +2,9 @@ const ENDPOINT = 'https://api.mymemory.translated.net/get'
 // MyMemory's free/anonymous tier caps out around 500 chars per request, so
 // long synopses need to be split into smaller pieces first
 const CHUNK_SIZE = 450
+// attaching any email (doesn't need to be real/reachable) raises the daily
+// word quota from ~1-5k to ~50k words/day on MyMemory's free tier
+const CONTACT_EMAIL = 'translate@gmail.com'
 
 function splitIntoChunks(text) {
   const sentences = text.split(/(?<=[.!?])\s+/)
@@ -23,7 +26,7 @@ function splitIntoChunks(text) {
 }
 
 async function translateChunk(text, target) {
-  const url = `${ENDPOINT}?q=${encodeURIComponent(text)}&langpair=en|${target}`
+  const url = `${ENDPOINT}?q=${encodeURIComponent(text)}&langpair=en|${target}&de=${CONTACT_EMAIL}`
   const res = await fetch(url)
   const json = await res.json()
 
