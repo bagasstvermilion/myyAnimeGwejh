@@ -28,7 +28,7 @@ export default function SearchBar({ onSearch }) {
             type="button"
             onClick={handleClear}
             aria-label="Hapus pencarian"
-            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-lg text-violet-600 transition hover:opacity-70"
+            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-lg text-violet-600 transition hover:opacity-70"
           >
             ✕
           </button>
@@ -36,7 +36,7 @@ export default function SearchBar({ onSearch }) {
       </div>
       <button
         type="submit"
-        className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:opacity-80"
+        className="cursor-pointer rounded-full bg-zinc-900 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:opacity-80"
       >
         Cari
       </button>
