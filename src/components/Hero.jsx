@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom'
-import PosterCollage from './PosterCollage'
+import { Link } from "react-router-dom";
+import PosterCollage from "./PosterCollage";
 
 export default function Hero() {
   return (
@@ -22,8 +22,11 @@ export default function Hero() {
             Catat semua anime yang pernah kamu tonton
           </h1>
           <p className="mt-6 max-w-md text-base text-zinc-500">
-            Cari, simpan, dan pantau progress nonton anime kamu sendiri —
-            rapi, personal, dan bisa diakses dari device mana aja.
+            Cari, simpan, dan pantau progress nonton anime kamu sendiri. Lengkap
+            sampai ke detail informasi dan jadwalnya!
+          </p>
+          <p className="mt-4 max-w-md border-l-2 border-violet-300 pl-4 font-display text-base italic text-zinc-400">
+            "List anime kamu, dimana dan kapan saja."
           </p>
 
           <div className="mt-10 flex items-center gap-3">
@@ -47,5 +50,5 @@ export default function Hero() {
         </div>
       </div>
     </section>
-  )
+  );
 }

@@ -7,7 +7,7 @@ export default function Footer() {
         </span>
         <p className="mt-1 text-[11px] text-zinc-400">
           Dibuat dengan <span className="text-fuchsia-500">♥</span> oleh Bagas —
-          credit to myy bini Laila Nazma ❤️
+          credit to myy bini Lailaaa ❤️
         </p>
       </div>
     </footer>
