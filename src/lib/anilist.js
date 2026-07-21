@@ -176,6 +176,30 @@ export async function getSeasonAnime(page = 1) {
   return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 
+export async function getUpcomingAnime(page = 1) {
+  const gql = `
+    query ($page: Int) {
+      Page(page: $page, perPage: 24) {
+        pageInfo {
+          currentPage
+          lastPage
+          hasNextPage
+        }
+        media(
+          status: NOT_YET_RELEASED
+          type: ANIME
+          isAdult: false
+          sort: POPULARITY_DESC
+        ) {
+          ${MEDIA_FIELDS}
+        }
+      }
+    }
+  `
+  const data = await anilistFetch(gql, { page })
+  return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
+}
+
 export async function getAnimeById(id) {
   const gql = `
     query ($id: Int) {

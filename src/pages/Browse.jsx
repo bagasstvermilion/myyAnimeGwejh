@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { searchAnime, getTopAnime, getSeasonAnime } from "../lib/anilist";
+import {
+  searchAnime,
+  getTopAnime,
+  getSeasonAnime,
+  getUpcomingAnime,
+} from "../lib/anilist";
 import { gradientBorderStyle } from "../lib/gradientBorder";
 import SearchBar from "../components/SearchBar";
 import AnimeGrid from "../components/AnimeGrid";
@@ -8,8 +13,9 @@ import Pagination from "../components/Pagination";
 import Spinner from "../components/Spinner";
 
 const TABS = [
-  { key: "top", label: "Top Ranking" },
-  { key: "season", label: "Musim Ini" },
+  { key: "top", label: "Top Ranking", queryName: "top-anime", fetcher: getTopAnime },
+  { key: "season", label: "Musim Ini", queryName: "season-anime", fetcher: getSeasonAnime },
+  { key: "upcoming", label: "Segera Tayang", queryName: "upcoming-anime", fetcher: getUpcomingAnime },
 ];
 
 function tabStyle(active) {
@@ -21,14 +27,11 @@ export default function Browse() {
   const [tab, setTab] = useState("top");
   const [page, setPage] = useState(1);
 
+  const activeTab = TABS.find((t) => t.key === tab);
+
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: search
-      ? ["search", search, page]
-      : [tab === "season" ? "season-anime" : "top-anime", page],
-    queryFn: () => {
-      if (search) return searchAnime(search, page);
-      return tab === "season" ? getSeasonAnime(page) : getTopAnime(page);
-    },
+    queryKey: search ? ["search", search, page] : [activeTab.queryName, page],
+    queryFn: () => (search ? searchAnime(search, page) : activeTab.fetcher(page)),
   });
 
   function handleSearch(query) {
@@ -47,9 +50,7 @@ export default function Browse() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  const heading = search
-    ? `Hasil untuk "${search}"`
-    : TABS.find((t) => t.key === tab)?.label;
+  const heading = search ? `Hasil untuk "${search}"` : activeTab.label;
 
   return (
     <div className="mx-auto max-w-[1440px] px-8 lg:px-14 py-12">
