@@ -130,6 +130,37 @@ export async function getTopAnime(page = 1) {
   return { data: data.Page.media.map(normalize) }
 }
 
+function getCurrentSeason() {
+  const month = new Date().getMonth() + 1
+  const year = new Date().getFullYear()
+
+  if (month <= 3) return { season: 'WINTER', year }
+  if (month <= 6) return { season: 'SPRING', year }
+  if (month <= 9) return { season: 'SUMMER', year }
+  return { season: 'FALL', year }
+}
+
+export async function getSeasonAnime(page = 1) {
+  const { season, year } = getCurrentSeason()
+  const gql = `
+    query ($page: Int, $season: MediaSeason, $seasonYear: Int) {
+      Page(page: $page, perPage: 25) {
+        media(
+          season: $season
+          seasonYear: $seasonYear
+          type: ANIME
+          isAdult: false
+          sort: POPULARITY_DESC
+        ) {
+          ${MEDIA_FIELDS}
+        }
+      }
+    }
+  `
+  const data = await anilistFetch(gql, { page, season, seasonYear: year })
+  return { data: data.Page.media.map(normalize) }
+}
+
 export async function getAnimeById(id) {
   const gql = `
     query ($id: Int) {
