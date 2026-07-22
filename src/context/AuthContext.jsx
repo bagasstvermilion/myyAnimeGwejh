@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import BannedNotice from '../components/BannedNotice'
 
 const AuthContext = createContext(null)
 
@@ -7,6 +8,8 @@ export function AuthProvider({ children }) {
   // undefined = still checking, null = confirmed logged out
   const [session, setSession] = useState(undefined)
   const [onlineUserIds, setOnlineUserIds] = useState(new Set())
+  const [bannedNotice, setBannedNotice] = useState(false)
+  const channelRef = useRef(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
@@ -32,10 +35,17 @@ export function AuthProvider({ children }) {
     const channel = supabase.channel('online-users', {
       config: { presence: { key: userId } },
     })
+    channelRef.current = channel
 
     channel
       .on('presence', { event: 'sync' }, () => {
         setOnlineUserIds(new Set(Object.keys(channel.presenceState())))
+      })
+      .on('broadcast', { event: 'user-banned' }, ({ payload }) => {
+        if (payload.userId === userId) {
+          setBannedNotice(true)
+          supabase.auth.signOut()
+        }
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -44,9 +54,18 @@ export function AuthProvider({ children }) {
       })
 
     return () => {
+      channelRef.current = null
       supabase.removeChannel(channel)
     }
   }, [session?.user?.id])
+
+  function broadcastUserBanned(userId) {
+    channelRef.current?.send({
+      type: 'broadcast',
+      event: 'user-banned',
+      payload: { userId },
+    })
+  }
 
   const value = {
     session,
@@ -54,10 +73,16 @@ export function AuthProvider({ children }) {
     isAdmin: session?.user?.app_metadata?.role === 'admin',
     isLoading: session === undefined,
     onlineUserIds,
+    broadcastUserBanned,
     signOut: () => supabase.auth.signOut(),
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <BannedNotice open={bannedNotice} onClose={() => setBannedNotice(false)} />
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {

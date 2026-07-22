@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../context/AuthContext";
+import { supabase } from "../../lib/supabase";
 import { fetchUsers, manageUser, setUserRole } from "../../lib/adminUsers";
 import Spinner from "../../components/Spinner";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -26,7 +27,7 @@ function formatDate(value) {
 
 export default function GrantAccess() {
   const queryClient = useQueryClient();
-  const { onlineUserIds } = useAuth();
+  const { onlineUserIds, broadcastUserBanned } = useAuth();
 
   const {
     data: users,
@@ -38,6 +39,21 @@ export default function GrantAccess() {
     queryFn: fetchUsers,
   });
 
+  // refetch the list live whenever a new account signs up (see the
+  // on_auth_user_created trigger + public.user_events table in Supabase)
+  useEffect(() => {
+    const channel = supabase
+      .channel("user-events")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "user_events" },
+        () => queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [queryClient]);
+
   const updateRole = useMutation({
     mutationFn: setUserRole,
     onSuccess: () =>
@@ -46,8 +62,12 @@ export default function GrantAccess() {
 
   const manage = useMutation({
     mutationFn: manageUser,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      if (variables.action === "ban") {
+        broadcastUserBanned(variables.userId);
+      }
+    },
   });
 
   const [confirmState, setConfirmState] = useState(null);
