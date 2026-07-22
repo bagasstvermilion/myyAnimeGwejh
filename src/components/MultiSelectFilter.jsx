@@ -32,9 +32,12 @@ export default function MultiSelectFilter({ label, options, selected, onChange }
         className="flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-zinc-900 transition hover:opacity-80"
       >
         {label}
-        {/* always reserve space for the count so the button doesn't resize
-            (and shove the rest of the row around) when a filter is picked */}
-        <span className={selected.length ? undefined : 'invisible'}>
+        {/* fixed width (not just reserved-when-empty) so the button never
+            resizes — otherwise it still shifts every time the count's
+            digit count changes, e.g. going from (1) to (2) to (10) */}
+        <span
+          className={`inline-block w-8 text-center ${selected.length ? '' : 'invisible'}`}
+        >
           ({selected.length || 1})
         </span>
         <svg

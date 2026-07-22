@@ -6,6 +6,7 @@ import { gradientBorderStyle } from "../lib/gradientBorder";
 import { translateText } from "../lib/translate";
 import translateIcon from "../assets/img/translate-icon.png";
 import Spinner from "../components/Spinner";
+import WatchlistButton from "../components/WatchlistButton";
 
 function StatCard({ label, value }) {
   return (
@@ -78,29 +79,33 @@ export default function AnimeDetail() {
 
   return (
     <div className="mx-auto max-w-[1440px] px-8 pb-16 pt-8 lg:px-14">
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        style={gradientBorderStyle()}
-        className="mb-6 inline-flex cursor-pointer items-center gap-1 rounded-full py-1.5 pl-3 pr-4 text-sm font-medium text-zinc-900 transition hover:opacity-80"
-      >
-        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
-          <defs>
-            <linearGradient id="back-chevron-gradient" x1="0" y1="0" x2="24" y2="24">
-              <stop offset="0" stopColor="#f472b6" />
-              <stop offset="1" stopColor="#7c3aed" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M15 5l-7 7 7 7"
-            stroke="url(#back-chevron-gradient)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        Kembali
-      </button>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          style={gradientBorderStyle()}
+          className="inline-flex cursor-pointer items-center gap-1 rounded-full py-1.5 pl-3 pr-4 text-sm font-medium text-zinc-900 transition hover:opacity-80"
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+            <defs>
+              <linearGradient id="back-chevron-gradient" x1="0" y1="0" x2="24" y2="24">
+                <stop offset="0" stopColor="#f472b6" />
+                <stop offset="1" stopColor="#7c3aed" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M15 5l-7 7 7 7"
+              stroke="url(#back-chevron-gradient)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Kembali
+        </button>
+
+        <WatchlistButton anime={anime} />
+      </div>
 
       {/* hero */}
       <div className="relative overflow-hidden rounded-3xl">
