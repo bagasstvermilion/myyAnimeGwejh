@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     return json({ error: 'Kamu bukan admin.' }, 403)
   }
 
-  const { userId, action, duration } = await req.json()
+  const { userId, action, duration, reason } = await req.json()
   if (!userId || !VALID_ACTIONS.includes(action)) {
     return json({ error: 'userId dan action (delete/ban/unban) wajib diisi.' }, 400)
   }
@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
   const actorName = caller.email?.split('@')[0] ?? 'admin'
   const message =
     action === 'ban'
-      ? `${actorName} telah mem-banned user tersebut selama ${DURATION_LABELS[duration]}`
+      ? `${actorName} telah mem-banned user tersebut selama ${DURATION_LABELS[duration]}${reason ? ` (Alasan: ${reason})` : ''}`
       : `${actorName} telah meng-unbanned user tersebut`
 
   const existingLogs = Array.isArray(target.user.app_metadata?.logs)
@@ -89,7 +89,12 @@ Deno.serve(async (req) => {
 
   const { error } = await adminClient.auth.admin.updateUserById(userId, {
     ban_duration: action === 'ban' ? BAN_DURATIONS[duration] : 'none',
-    app_metadata: { ...target.user.app_metadata, logs },
+    app_metadata: {
+      ...target.user.app_metadata,
+      logs,
+      banReason: action === 'ban' ? reason || null : null,
+      banDurationLabel: action === 'ban' ? DURATION_LABELS[duration] : null,
+    },
   })
   if (error) return json({ error: error.message }, 500)
 

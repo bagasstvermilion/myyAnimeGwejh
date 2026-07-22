@@ -22,7 +22,7 @@ export default function AdminDashboard() {
     <div>
       <AdminSidebar />
       <div className="pl-14">
-        <div className="mx-auto max-w-[1440px] px-8 py-12 lg:px-14">
+        <div className="px-8 py-12 lg:px-14">
           <h1 className="font-display text-2xl font-semibold text-zinc-900">
             Dashboard Admin
           </h1>

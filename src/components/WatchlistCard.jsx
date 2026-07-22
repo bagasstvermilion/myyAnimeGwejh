@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
-import { removeWatchlistEntry, statusLabel } from '../lib/watchlist'
+import { removeWatchlistEntry, statusColor, statusLabel } from '../lib/watchlist'
 
 export default function WatchlistCard({ entry }) {
   const { user } = useAuth()
@@ -31,7 +31,7 @@ export default function WatchlistCard({ entry }) {
           <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug text-zinc-900">
             {entry.title}
           </h3>
-          <div className="mt-auto text-xs font-medium text-violet-600">
+          <div className={`mt-auto text-xs font-medium ${statusColor(entry.status)}`}>
             {statusLabel(entry.status)}
           </div>
         </div>
