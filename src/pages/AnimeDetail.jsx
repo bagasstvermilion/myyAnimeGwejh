@@ -144,7 +144,10 @@ export default function AnimeDetail() {
       {/* stats */}
       <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Skor" value={anime.score} />
-        <StatCard label="Rank" value={anime.rank ? `#${anime.rank}` : null} />
+        <StatCard
+          label={anime.type ? `Rank (${anime.type})` : "Rank"}
+          value={anime.rank ? `#${anime.rank}` : null}
+        />
         <StatCard label="Episode" value={anime.episodes} />
         <StatCard label="Durasi" value={anime.duration} />
         <StatCard label="Status" value={anime.status} />
