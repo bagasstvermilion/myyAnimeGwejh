@@ -1,40 +1,42 @@
-import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { useAuth } from '../context/AuthContext'
-import { gradientBorderStyle } from '../lib/gradientBorder'
-import { STATUSES, getWatchlist } from '../lib/watchlist'
-import Spinner from '../components/Spinner'
-import WatchlistCard from '../components/WatchlistCard'
-import userLogo from '../assets/img/user-logo.png'
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "../context/AuthContext";
+import { gradientBorderStyle } from "../lib/gradientBorder";
+import { STATUSES, getWatchlist } from "../lib/watchlist";
+import Spinner from "../components/Spinner";
+import WatchlistCard from "../components/WatchlistCard";
+import SearchBar from "../components/SearchBar";
+import userLogo from "../assets/img/user-logo.png";
 
-const TABS = [{ value: 'all', label: 'Semua' }, ...STATUSES]
+const TABS = [{ value: "all", label: "Semua" }, ...STATUSES];
 
 function tabStyle(active) {
-  return gradientBorderStyle(active ? '#f6effc' : '#fafafa')
+  return gradientBorderStyle(active ? "#f6effc" : "#fafafa");
 }
 
 export default function MyList() {
-  const { user, isLoading } = useAuth()
-  const location = useLocation()
-  const [tab, setTab] = useState('all')
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
+  const [tab, setTab] = useState("all");
+  const [search, setSearch] = useState("");
 
   const {
     data: watchlist,
     isLoading: isWatchlistLoading,
     isError,
   } = useQuery({
-    queryKey: ['watchlist', user?.id],
+    queryKey: ["watchlist", user?.id],
     queryFn: () => getWatchlist(user.id),
     enabled: !!user,
-  })
+  });
 
   if (isLoading) {
     return (
       <div className="mx-auto max-w-[1440px] px-8 lg:px-14">
         <Spinner label="Memuat..." />
       </div>
-    )
+    );
   }
 
   if (!user) {
@@ -46,12 +48,12 @@ export default function MyList() {
           style={{
             WebkitMaskImage: `url(${userLogo})`,
             maskImage: `url(${userLogo})`,
-            WebkitMaskSize: 'contain',
-            maskSize: 'contain',
-            WebkitMaskRepeat: 'no-repeat',
-            maskRepeat: 'no-repeat',
-            WebkitMaskPosition: 'center',
-            maskPosition: 'center',
+            WebkitMaskSize: "contain",
+            maskSize: "contain",
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+            WebkitMaskPosition: "center",
+            maskPosition: "center",
           }}
         />
         <h1 className="mt-2 font-display text-2xl font-semibold text-zinc-900">
@@ -68,26 +70,30 @@ export default function MyList() {
           Login
         </Link>
       </div>
-    )
+    );
   }
 
-  const filtered =
-    tab === 'all'
-      ? watchlist ?? []
-      : (watchlist ?? []).filter((entry) => entry.status === tab)
+  const filtered = (watchlist ?? [])
+    .filter((entry) => tab === "all" || entry.status === tab)
+    .filter((entry) =>
+      entry.title.toLowerCase().includes(search.trim().toLowerCase()),
+    );
 
   return (
     <div className="mx-auto max-w-[1440px] px-8 py-12 lg:px-14">
-      <div className="mb-8">
+      <div className="mb-4 max-w-xl">
         <h1 className="font-display text-2xl font-semibold text-zinc-900">
           My List
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
           List anime yang udah kamu simpan.
         </p>
+        <div className="mt-6">
+          <SearchBar onSearch={setSearch} defaultValue={search} />
+        </div>
       </div>
 
-      <div className="mb-8 flex flex-wrap items-center gap-2">
+      <div className="mb-12 flex flex-wrap items-center gap-2">
         {TABS.map((t) => (
           <button
             key={t.value}
@@ -124,5 +130,5 @@ export default function MyList() {
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -31,7 +31,7 @@ const MENU_ITEMS = [
 
 export default function AdminSidebar() {
   return (
-    <nav className="group fixed left-0 top-16 z-30 flex h-[calc(100vh-4rem)] w-14 flex-col gap-1 overflow-hidden border-r border-zinc-100 bg-white p-2 transition-[width] duration-300 ease-out hover:w-56 hover:shadow-xl">
+    <nav className="group fixed left-0 top-16 z-30 flex h-[calc(100vh-4rem)] w-14 flex-col gap-1 overflow-hidden border-r-2 border-zinc-200 bg-white p-2 transition-[width] duration-300 ease-out hover:w-56 hover:shadow-xl">
       {MENU_ITEMS.map((item) => (
         <NavLink
           key={item.to}

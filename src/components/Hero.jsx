@@ -6,11 +6,11 @@ export default function Hero() {
     <section className="relative overflow-hidden">
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-40 top-1/2 h-[680px] w-[680px] -translate-y-1/2 rounded-full bg-gradient-to-br from-violet-300 via-fuchsia-200 to-amber-100 opacity-60 blur-[120px]"
+        className="pointer-events-none absolute -right-40 top-1/2 h-[680px] w-[680px] -translate-y-1/2 rounded-full bg-gradient-to-br from-pink-400 to-violet-600 opacity-10 blur-[120px]"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-32 -top-32 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-fuchsia-200 to-violet-100 opacity-40 blur-[100px]"
+        className="pointer-events-none absolute -left-32 -top-32 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-pink-300 to-violet-400 opacity-10 blur-[100px]"
       />
 
       <div className="relative mx-auto grid max-w-[1440px] items-center gap-12 px-8 py-20 lg:grid-cols-2 lg:px-14 lg:py-28">

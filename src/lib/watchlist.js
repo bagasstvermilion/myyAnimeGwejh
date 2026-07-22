@@ -11,6 +11,17 @@ export function statusLabel(value) {
   return STATUSES.find((s) => s.value === value)?.label ?? value
 }
 
+const STATUS_COLORS = {
+  watching: 'text-blue-600',
+  completed: 'text-emerald-600',
+  plan_to_watch: 'text-violet-600',
+  dropped: 'text-red-500',
+}
+
+export function statusColor(value) {
+  return STATUS_COLORS[value] ?? 'text-zinc-500'
+}
+
 export async function getWatchlist(userId) {
   const { data, error } = await supabase
     .from('watchlist')

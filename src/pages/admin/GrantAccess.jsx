@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "../../context/AuthContext";
 import { fetchUsers, manageUser, setUserRole } from "../../lib/adminUsers";
 import Spinner from "../../components/Spinner";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -25,6 +26,7 @@ function formatDate(value) {
 
 export default function GrantAccess() {
   const queryClient = useQueryClient();
+  const { onlineUserIds } = useAuth();
 
   const {
     data: users,
@@ -103,95 +105,102 @@ export default function GrantAccess() {
       )}
 
       {users && (
-        <div className="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-100">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-zinc-100 text-xs uppercase tracking-wide text-zinc-400">
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Role</th>
-                <th className="px-4 py-3 font-medium">Terdaftar</th>
-                <th className="px-4 py-3 font-medium">Login Terakhir</th>
-                <th className="px-4 py-3 font-medium">Aksi</th>
-                <th className="px-4 py-3 font-medium">Log</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr
-                  key={u.id}
-                  className="border-b border-zinc-50 last:border-0"
-                >
-                  <td className="px-4 py-3 text-zinc-900">{u.email}</td>
-                  <td className="px-4 py-3">
-                    <select
-                      value={u.role}
-                      disabled={updateRole.isPending}
-                      onChange={(e) =>
-                        updateRole.mutate({
-                          userId: u.id,
-                          role: e.target.value,
-                        })
-                      }
-                      className="cursor-pointer rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500">
-                    {formatDate(u.createdAt)}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500">
-                    {formatDate(u.lastSignInAt)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={manage.isPending}
-                        onClick={() => handleToggleBan(u)}
-                        className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                          u.isBanned
-                            ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
-                            : "text-zinc-600 ring-1 ring-zinc-200 hover:bg-zinc-50"
-                        }`}
-                      >
-                        {u.isBanned ? "Unban" : "Banned"}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={manage.isPending}
-                        onClick={() => handleDelete(u)}
-                        className="cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Hapus
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => setLogUser(u)}
-                      className="cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium text-zinc-600 ring-1 ring-zinc-200 transition hover:bg-zinc-50"
-                    >
-                      Lihat Log
-                    </button>
-                  </td>
-                </tr>
-              ))}
+        <div className="mt-6 w-fit overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-100">
+          <div className="grid w-fit grid-cols-[220px_110px_110px_130px_120px_220px_110px] gap-x-2 px-6 py-3 pr-16 text-sm text-zinc-500">
+            <div className="text-center font-medium">Email</div>
+            <div className="text-center font-medium">Role</div>
+            <div className="text-center font-medium">Terdaftar</div>
+            <div className="text-center font-medium">Login terakhir</div>
+            <div className="text-center font-medium">Status</div>
+            <div className="text-center font-medium">Aksi</div>
+            <div className="text-center font-medium">Log</div>
+          </div>
+          <div className="mx-6 border-b-2 border-zinc-200" />
 
-              {users.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-zinc-400"
-                  >
-                    Belum ada user yang terdaftar.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          {users.map((u) => (
+            <div
+              key={u.id}
+              className="grid w-fit grid-cols-[220px_110px_110px_130px_120px_220px_110px] items-center gap-x-2 border-b border-zinc-50 px-6 py-3 pr-16 text-sm last:border-0"
+            >
+              <div className="truncate text-center text-zinc-900">
+                {u.email}
+              </div>
+              <div className="flex justify-center">
+                <select
+                  value={u.role}
+                  disabled={updateRole.isPending}
+                  onChange={(e) =>
+                    updateRole.mutate({
+                      userId: u.id,
+                      role: e.target.value,
+                    })
+                  }
+                  className="cursor-pointer rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div className="text-center text-zinc-500">
+                {formatDate(u.createdAt)}
+              </div>
+              <div className="text-center text-zinc-500">
+                {formatDate(u.lastSignInAt)}
+              </div>
+              <div className="flex items-center justify-center gap-1.5">
+                <span
+                  aria-hidden
+                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                    onlineUserIds.has(u.id) ? "bg-emerald-500" : "bg-zinc-300"
+                  }`}
+                />
+                <span
+                  className={`font-display text-sm font-medium ${
+                    onlineUserIds.has(u.id) ? "text-emerald-600" : "text-zinc-400"
+                  }`}
+                >
+                  {onlineUserIds.has(u.id) ? "Active" : "Offline"}
+                </span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  disabled={manage.isPending}
+                  onClick={() => handleToggleBan(u)}
+                  className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                    u.isBanned
+                      ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                      : "text-zinc-600 ring-1 ring-zinc-200 hover:bg-zinc-50"
+                  }`}
+                >
+                  {u.isBanned ? "Unban" : "Banned"}
+                </button>
+                <button
+                  type="button"
+                  disabled={manage.isPending}
+                  onClick={() => handleDelete(u)}
+                  className="cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Hapus
+                </button>
+              </div>
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setLogUser(u)}
+                  className="cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium text-zinc-600 ring-1 ring-zinc-200 transition hover:bg-zinc-50"
+                >
+                  Lihat Log
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {users.length === 0 && (
+            <div className="px-4 py-8 text-center text-zinc-400">
+              Belum ada user yang terdaftar.
+            </div>
+          )}
         </div>
       )}
 
