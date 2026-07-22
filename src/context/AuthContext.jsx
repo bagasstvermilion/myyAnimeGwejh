@@ -8,7 +8,7 @@ export function AuthProvider({ children }) {
   // undefined = still checking, null = confirmed logged out
   const [session, setSession] = useState(undefined)
   const [onlineUserIds, setOnlineUserIds] = useState(new Set())
-  const [bannedNotice, setBannedNotice] = useState(false)
+  const [bannedNotice, setBannedNotice] = useState(null)
   const channelRef = useRef(null)
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
       })
       .on('broadcast', { event: 'user-banned' }, ({ payload }) => {
         if (payload.userId === userId) {
-          setBannedNotice(true)
+          setBannedNotice({ reason: payload.reason, duration: payload.duration })
           supabase.auth.signOut()
         }
       })
@@ -59,11 +59,11 @@ export function AuthProvider({ children }) {
     }
   }, [session?.user?.id])
 
-  function broadcastUserBanned(userId) {
+  function broadcastUserBanned(userId, { reason, duration } = {}) {
     channelRef.current?.send({
       type: 'broadcast',
       event: 'user-banned',
-      payload: { userId },
+      payload: { userId, reason, duration },
     })
   }
 
@@ -80,7 +80,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={value}>
       {children}
-      <BannedNotice open={bannedNotice} onClose={() => setBannedNotice(false)} />
+      <BannedNotice details={bannedNotice} onClose={() => setBannedNotice(null)} />
     </AuthContext.Provider>
   )
 }

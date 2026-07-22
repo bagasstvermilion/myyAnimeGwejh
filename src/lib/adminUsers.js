@@ -29,9 +29,9 @@ export async function setUserRole({ userId, role }) {
   return data
 }
 
-export async function manageUser({ userId, action, duration }) {
+export async function manageUser({ userId, action, duration, reason }) {
   const { data, error } = await supabase.functions.invoke('admin-manage-user', {
-    body: { userId, action, duration },
+    body: { userId, action, duration, reason },
   })
   if (error) throw new Error(await extractError(error, data))
   return data

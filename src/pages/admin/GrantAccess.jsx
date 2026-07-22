@@ -65,13 +65,18 @@ export default function GrantAccess() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       if (variables.action === "ban") {
-        broadcastUserBanned(variables.userId);
+        broadcastUserBanned(variables.userId, {
+          reason: variables.reason || undefined,
+          duration: BAN_DURATIONS.find((d) => d.value === variables.duration)
+            ?.label,
+        });
       }
     },
   });
 
   const [confirmState, setConfirmState] = useState(null);
   const [banDuration, setBanDuration] = useState("7d");
+  const [banReason, setBanReason] = useState("");
   const [logUser, setLogUser] = useState(null);
 
   function handleDelete(u) {
@@ -84,6 +89,7 @@ export default function GrantAccess() {
       return;
     }
     setBanDuration("7d");
+    setBanReason("");
     setConfirmState({ user: u, action: "ban" });
   }
 
@@ -91,7 +97,10 @@ export default function GrantAccess() {
     manage.mutate({
       userId: confirmState.user.id,
       action: confirmState.action,
-      ...(confirmState.action === "ban" && { duration: banDuration }),
+      ...(confirmState.action === "ban" && {
+        duration: banDuration,
+        reason: banReason.trim(),
+      }),
     });
     setConfirmState(null);
   }
@@ -176,7 +185,9 @@ export default function GrantAccess() {
                 />
                 <span
                   className={`font-display text-sm font-medium ${
-                    onlineUserIds.has(u.id) ? "text-emerald-600" : "text-zinc-400"
+                    onlineUserIds.has(u.id)
+                      ? "text-emerald-600"
+                      : "text-zinc-400"
                   }`}
                 >
                   {onlineUserIds.has(u.id) ? "Active" : "Offline"}
@@ -256,6 +267,14 @@ export default function GrantAccess() {
                 </button>
               ))}
             </div>
+
+            <textarea
+              value={banReason}
+              onChange={(e) => setBanReason(e.target.value)}
+              placeholder="Alasan banned..."
+              rows={2}
+              className="mt-4 w-full resize-none rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+            />
 
             <div className="mt-5 flex items-center gap-2">
               <span

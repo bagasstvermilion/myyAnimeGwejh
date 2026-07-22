@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { checkBanStatus } from "../lib/banStatus";
 import DotDecoration from "../components/DotDecoration";
+import BanCountdownDialog from "../components/BanCountdownDialog";
 import userLogo from "../assets/img/user-logo.png";
 
 export default function Login() {
@@ -15,6 +17,7 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [banInfo, setBanInfo] = useState(null);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -22,14 +25,27 @@ export default function Login() {
     setError("");
     setMessage("");
 
-    const { error: authError } =
+    // fire both requests together — checking ban status doesn't depend on
+    // the sign-in result, so there's no need to wait for it to fail first
+    const authPromise =
       mode === "signin"
-        ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password });
+        ? supabase.auth.signInWithPassword({ email, password })
+        : supabase.auth.signUp({ email, password });
+    const banStatusPromise =
+      mode === "signin" ? checkBanStatus(email) : Promise.resolve({ banned: false });
+
+    const [{ error: authError }, banStatus] = await Promise.all([
+      authPromise,
+      banStatusPromise,
+    ]);
 
     setIsSubmitting(false);
 
     if (authError) {
+      if (mode === "signin" && banStatus.banned) {
+        setBanInfo(banStatus);
+        return;
+      }
       setError(authError.message);
       return;
     }
@@ -139,6 +155,15 @@ export default function Login() {
           Kembali ke Dashboard
         </Link>
       </div>
+
+      {banInfo && (
+        <BanCountdownDialog
+          bannedUntil={banInfo.bannedUntil}
+          duration={banInfo.duration}
+          reason={banInfo.reason}
+          onClose={() => setBanInfo(null)}
+        />
+      )}
     </div>
   );
 }
