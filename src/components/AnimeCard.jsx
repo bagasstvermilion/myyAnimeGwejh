@@ -19,7 +19,7 @@ export default function AnimeCard({ anime, rank }) {
           />
         </div>
         <div className="flex flex-1 flex-col gap-1.5 p-4">
-          <h3 className="line-clamp-2 text-sm font-medium text-zinc-900">
+          <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug text-zinc-900">
             {title}
           </h3>
           <div className="mt-auto flex items-center gap-2 text-xs text-zinc-400">

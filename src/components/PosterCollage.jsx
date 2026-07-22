@@ -24,7 +24,7 @@ export default function PosterCollage() {
     // pages ask for — the poster-crossfade keyframes assume exactly 5
     // turns per loop, so a different pool size leaves a gap with nothing
     // visible partway through the cycle
-    queryFn: () => getTopAnime(1, 25),
+    queryFn: () => getTopAnime(1, { perPage: 25 }),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,

@@ -36,6 +36,39 @@ const MEDIA_FIELDS = `
   }
 `
 
+// AniList's fixed genre list (minus Hentai, since isAdult: false already
+// excludes it from every query anyway)
+export const GENRES = [
+  'Action',
+  'Adventure',
+  'Comedy',
+  'Drama',
+  'Ecchi',
+  'Fantasy',
+  'Horror',
+  'Mahou Shoujo',
+  'Mecha',
+  'Music',
+  'Mystery',
+  'Psychological',
+  'Romance',
+  'Sci-Fi',
+  'Slice of Life',
+  'Sports',
+  'Supernatural',
+  'Thriller',
+]
+
+export const FORMATS = [
+  { value: 'TV', label: 'TV' },
+  { value: 'TV_SHORT', label: 'TV Short' },
+  { value: 'MOVIE', label: 'Movie' },
+  { value: 'OVA', label: 'OVA' },
+  { value: 'ONA', label: 'ONA' },
+  { value: 'SPECIAL', label: 'Special' },
+  { value: 'MUSIC', label: 'Music' },
+]
+
 const STATUS_LABELS = {
   FINISHED: 'Finished Airing',
   RELEASING: 'Currently Airing',
@@ -102,41 +135,54 @@ async function anilistFetch(query, variables) {
   return json.data
 }
 
-export async function searchAnime(query, page = 1) {
+export async function searchAnime(query, page = 1, { genre, format } = {}) {
   const gql = `
-    query ($search: String, $page: Int) {
+    query ($search: String, $page: Int, $genre: [String], $format: [MediaFormat]) {
       Page(page: $page, perPage: 24) {
         pageInfo {
           currentPage
           lastPage
           hasNextPage
         }
-        media(search: $search, type: ANIME, isAdult: false, sort: SEARCH_MATCH) {
+        media(
+          search: $search
+          type: ANIME
+          isAdult: false
+          sort: SEARCH_MATCH
+          genre_in: $genre
+          format_in: $format
+        ) {
           ${MEDIA_FIELDS}
         }
       }
     }
   `
-  const data = await anilistFetch(gql, { search: query, page })
+  const data = await anilistFetch(gql, { search: query, page, genre, format })
   return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 
-export async function getTopAnime(page = 1, perPage = 24) {
+export async function getTopAnime(page = 1, { perPage = 24, genre, format } = {}) {
   const gql = `
-    query ($page: Int, $perPage: Int) {
+    query ($page: Int, $perPage: Int, $genre: [String], $format: [MediaFormat]) {
       Page(page: $page, perPage: $perPage) {
         pageInfo {
           currentPage
           lastPage
           hasNextPage
         }
-        media(type: ANIME, isAdult: false, sort: SCORE_DESC) {
+        media(
+          type: ANIME
+          isAdult: false
+          sort: SCORE_DESC
+          genre_in: $genre
+          format_in: $format
+        ) {
           ${MEDIA_FIELDS}
         }
       }
     }
   `
-  const data = await anilistFetch(gql, { page, perPage })
+  const data = await anilistFetch(gql, { page, perPage, genre, format })
   return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 
@@ -150,10 +196,16 @@ function getCurrentSeason() {
   return { season: 'FALL', year }
 }
 
-export async function getSeasonAnime(page = 1) {
+export async function getSeasonAnime(page = 1, { genre, format } = {}) {
   const { season, year } = getCurrentSeason()
   const gql = `
-    query ($page: Int, $season: MediaSeason, $seasonYear: Int) {
+    query (
+      $page: Int
+      $season: MediaSeason
+      $seasonYear: Int
+      $genre: [String]
+      $format: [MediaFormat]
+    ) {
       Page(page: $page, perPage: 24) {
         pageInfo {
           currentPage
@@ -166,19 +218,21 @@ export async function getSeasonAnime(page = 1) {
           type: ANIME
           isAdult: false
           sort: POPULARITY_DESC
+          genre_in: $genre
+          format_in: $format
         ) {
           ${MEDIA_FIELDS}
         }
       }
     }
   `
-  const data = await anilistFetch(gql, { page, season, seasonYear: year })
+  const data = await anilistFetch(gql, { page, season, seasonYear: year, genre, format })
   return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 
-export async function getUpcomingAnime(page = 1) {
+export async function getUpcomingAnime(page = 1, { genre, format } = {}) {
   const gql = `
-    query ($page: Int) {
+    query ($page: Int, $genre: [String], $format: [MediaFormat]) {
       Page(page: $page, perPage: 24) {
         pageInfo {
           currentPage
@@ -190,13 +244,15 @@ export async function getUpcomingAnime(page = 1) {
           type: ANIME
           isAdult: false
           sort: POPULARITY_DESC
+          genre_in: $genre
+          format_in: $format
         ) {
           ${MEDIA_FIELDS}
         }
       }
     }
   `
-  const data = await anilistFetch(gql, { page })
+  const data = await anilistFetch(gql, { page, genre, format })
   return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 
