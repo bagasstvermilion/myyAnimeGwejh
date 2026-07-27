@@ -27,7 +27,8 @@ function formatDate(value) {
 
 export default function GrantAccess() {
   const queryClient = useQueryClient();
-  const { onlineUserIds, broadcastUserBanned } = useAuth();
+  const { onlineUserIds, broadcastUserBanned, role: myRole } = useAuth();
+  const isFullAdmin = myRole === "admin";
 
   const {
     data: users,
@@ -88,7 +89,7 @@ export default function GrantAccess() {
       manage.mutate({ userId: u.id, action: "unban" });
       return;
     }
-    setBanDuration("7d");
+    setBanDuration("3d");
     setBanReason("");
     setConfirmState({ user: u, action: "ban" });
   }
@@ -111,7 +112,7 @@ export default function GrantAccess() {
         Grant Access
       </h2>
       <p className="mt-1 max-w-md text-sm text-zinc-500">
-        Atur siapa aja yang punya akses admin lewat dropdown role di bawah.
+        Kelola akses pengguna, lihat log, delete dan banned akun.
       </p>
 
       {isLoading && <Spinner label="Memuat data user..." />}
@@ -134,7 +135,8 @@ export default function GrantAccess() {
       )}
 
       {users && (
-        <div className="mt-6 w-fit overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-100">
+        <div className="mt-6 overflow-x-auto">
+        <div className="w-fit overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-100">
           <div className="grid w-fit grid-cols-[220px_110px_110px_130px_120px_220px_110px] gap-x-2 px-6 py-3 pr-16 text-sm text-zinc-500">
             <div className="text-center font-medium">Email</div>
             <div className="text-center font-medium">Role</div>
@@ -149,26 +151,57 @@ export default function GrantAccess() {
           {users.map((u) => (
             <div
               key={u.id}
-              className="grid w-fit grid-cols-[220px_110px_110px_130px_120px_220px_110px] items-center gap-x-2 border-b border-zinc-50 px-6 py-3 pr-16 text-sm last:border-0"
+              className="grid w-fit grid-cols-[220px_110px_110px_130px_120px_220px_110px] items-center gap-x-2 border-b border-zinc-50 px-6 py-3 pr-16 text-sm last:border-0 even:bg-zinc-100"
             >
               <div className="truncate text-center text-zinc-900">
                 {u.email}
               </div>
               <div className="flex justify-center">
-                <select
-                  value={u.role}
-                  disabled={updateRole.isPending}
-                  onChange={(e) =>
-                    updateRole.mutate({
-                      userId: u.id,
-                      role: e.target.value,
-                    })
-                  }
-                  className="cursor-pointer rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={u.role}
+                    disabled={updateRole.isPending || !isFullAdmin}
+                    title={!isFullAdmin ? "Cuma admin yang bisa ubah role" : undefined}
+                    onChange={(e) =>
+                      updateRole.mutate({
+                        userId: u.id,
+                        role: e.target.value,
+                      })
+                    }
+                    style={gradientBorderStyle("#ffffff")}
+                    className="cursor-pointer appearance-none rounded-full bg-white py-1.5 pl-3 pr-7 text-xs font-medium text-zinc-700 outline-none transition focus:ring-2 focus:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="user">User</option>
+                    <option value="moderator">Moderator</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2"
+                    aria-hidden
+                  >
+                    <defs>
+                      <linearGradient
+                        id={`role-chevron-${u.id}`}
+                        x1="0"
+                        y1="0"
+                        x2="24"
+                        y2="24"
+                      >
+                        <stop offset="0" stopColor="#f472b6" />
+                        <stop offset="1" stopColor="#7c3aed" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M6 9l6 6 6-6"
+                      stroke={`url(#role-chevron-${u.id})`}
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
               </div>
               <div className="text-center text-zinc-500">
                 {formatDate(u.createdAt)}
@@ -200,8 +233,8 @@ export default function GrantAccess() {
                   onClick={() => handleToggleBan(u)}
                   className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
                     u.isBanned
-                      ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
-                      : "text-zinc-600 ring-1 ring-zinc-200 hover:bg-zinc-50"
+                      ? "text-emerald-600 ring-1 ring-emerald-500 hover:bg-emerald-50"
+                      : "text-red-500 ring-1 ring-red-500 hover:bg-red-50"
                   }`}
                 >
                   {u.isBanned ? "Unban" : "Banned"}
@@ -210,7 +243,7 @@ export default function GrantAccess() {
                   type="button"
                   disabled={manage.isPending}
                   onClick={() => handleDelete(u)}
-                  className="cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium text-red-500 ring-1 ring-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Hapus
                 </button>
@@ -219,7 +252,8 @@ export default function GrantAccess() {
                 <button
                   type="button"
                   onClick={() => setLogUser(u)}
-                  className="cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium text-zinc-600 ring-1 ring-zinc-200 transition hover:bg-zinc-50"
+                  style={gradientBorderStyle("#ffffff")}
+                  className="cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:opacity-80"
                 >
                   Lihat Log
                 </button>
@@ -232,6 +266,7 @@ export default function GrantAccess() {
               Belum ada user yang terdaftar.
             </div>
           )}
+        </div>
         </div>
       )}
 
@@ -275,27 +310,29 @@ export default function GrantAccess() {
               rows={2}
               className="mt-4 w-full resize-none rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
             />
-
-            <div className="mt-5 flex items-center gap-2">
-              <span
-                aria-hidden
-                className="h-4 w-4 shrink-0 bg-red-500"
-                style={{
-                  WebkitMaskImage: `url(${warningIcon})`,
-                  maskImage: `url(${warningIcon})`,
-                  WebkitMaskSize: "contain",
-                  maskSize: "contain",
-                  WebkitMaskRepeat: "no-repeat",
-                  maskRepeat: "no-repeat",
-                  WebkitMaskPosition: "center",
-                  maskPosition: "center",
-                }}
-              />
-              <p className="text-xs font-medium text-red-500">
-                Gunakan fitur dengan hati hati!
-              </p>
-            </div>
           </>
+        )}
+
+        {confirmState && (
+          <div className="mt-5 flex items-center gap-2">
+            <span
+              aria-hidden
+              className="h-5 w-5 shrink-0 bg-red-500"
+              style={{
+                WebkitMaskImage: `url(${warningIcon})`,
+                maskImage: `url(${warningIcon})`,
+                WebkitMaskSize: "contain",
+                maskSize: "contain",
+                WebkitMaskRepeat: "no-repeat",
+                maskRepeat: "no-repeat",
+                WebkitMaskPosition: "center",
+                maskPosition: "center",
+              }}
+            />
+            <p className="text-xs font-medium text-red-500">
+              Gunakan fitur dengan hati-hati!
+            </p>
+          </div>
         )}
       </ConfirmDialog>
 

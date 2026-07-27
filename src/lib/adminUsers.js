@@ -36,3 +36,28 @@ export async function manageUser({ userId, action, duration, reason }) {
   if (error) throw new Error(await extractError(error, data))
   return data
 }
+
+// user_events already has RLS scoped to admins-only, so this can query the
+// table directly instead of going through an edge function
+export async function fetchLoginEvents(days = 14) {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+  const { data, error } = await supabase
+    .from('user_events')
+    .select('created_at')
+    .eq('event_type', 'login')
+    .gte('created_at', since)
+
+  if (error) throw error
+  return data
+}
+
+export async function fetchRecentEvents(limit = 12) {
+  const { data, error } = await supabase
+    .from('user_events')
+    .select('id, event_type, user_id, metadata, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return data
+}

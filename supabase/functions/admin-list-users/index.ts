@@ -1,5 +1,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
+const STAFF_ROLES = ['admin', 'moderator']
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -32,7 +34,7 @@ Deno.serve(async (req) => {
     data: { user: caller },
   } = await callerClient.auth.getUser()
 
-  if (!caller || caller.app_metadata?.role !== 'admin') {
+  if (!caller || !STAFF_ROLES.includes(caller.app_metadata?.role)) {
     return json({ error: 'Kamu bukan admin.' }, 403)
   }
 
@@ -48,7 +50,7 @@ Deno.serve(async (req) => {
     .map((u) => ({
       id: u.id,
       email: u.email,
-      role: u.app_metadata?.role === 'admin' ? 'admin' : 'user',
+      role: STAFF_ROLES.includes(u.app_metadata?.role) ? u.app_metadata.role : 'user',
       createdAt: u.created_at,
       lastSignInAt: u.last_sign_in_at,
       isBanned: !!u.banned_until && new Date(u.banned_until) > new Date(),

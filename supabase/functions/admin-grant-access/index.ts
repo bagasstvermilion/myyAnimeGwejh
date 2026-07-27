@@ -1,6 +1,6 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
-const VALID_ROLES = ['admin', 'user']
+const VALID_ROLES = ['admin', 'moderator', 'user']
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,13 +34,15 @@ Deno.serve(async (req) => {
     data: { user: caller },
   } = await callerClient.auth.getUser()
 
+  // only real admins can change roles — moderators keep dashboard access but
+  // can't promote/demote anyone (including themselves), so there's no coup path
   if (!caller || caller.app_metadata?.role !== 'admin') {
-    return json({ error: 'Kamu bukan admin.' }, 403)
+    return json({ error: 'Cuma admin yang bisa ubah role.' }, 403)
   }
 
   const { userId, role } = await req.json()
   if (!userId || !VALID_ROLES.includes(role)) {
-    return json({ error: 'userId dan role (admin/user) wajib diisi.' }, 400)
+    return json({ error: 'userId dan role (admin/moderator/user) wajib diisi.' }, 400)
   }
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey)
@@ -52,6 +54,11 @@ Deno.serve(async (req) => {
     app_metadata: { ...target.user.app_metadata, role },
   })
   if (updateError) return json({ error: updateError.message }, 500)
+
+  // lets the admin Overview page's realtime subscription know to refetch
+  await adminClient
+    .from('user_events')
+    .insert({ event_type: 'role_change', user_id: userId, metadata: { role } })
 
   return json({ success: true })
 })

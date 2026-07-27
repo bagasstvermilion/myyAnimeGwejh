@@ -7,8 +7,10 @@ import AnimeDetail from './pages/AnimeDetail'
 import MyList from './pages/MyList'
 import Login from './pages/Login'
 import AdminDashboard from './pages/AdminDashboard'
+import Overview from './pages/admin/Overview'
 import GrantAccess from './pages/admin/GrantAccess'
 import UserReport from './pages/admin/UserReport'
+import Private from './pages/admin/Private'
 
 function App() {
   return (
@@ -22,9 +24,11 @@ function App() {
           <Route path="/my-list" element={<MyList />} />
           <Route path="/login" element={<Login />} />
           <Route path="/admin" element={<AdminDashboard />}>
-            <Route index element={<Navigate to="grant-access" replace />} />
+            <Route index element={<Navigate to="overview" replace />} />
+            <Route path="overview" element={<Overview />} />
             <Route path="grant-access" element={<GrantAccess />} />
             <Route path="user-report" element={<UserReport />} />
+            <Route path="private" element={<Private />} />
           </Route>
         </Routes>
       </div>

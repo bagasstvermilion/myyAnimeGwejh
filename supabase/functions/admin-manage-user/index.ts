@@ -1,6 +1,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const VALID_ACTIONS = ['delete', 'ban', 'unban']
+const STAFF_ROLES = ['admin', 'moderator']
 
 const BAN_DURATIONS: Record<string, string> = {
   '3d': '72h',
@@ -48,7 +49,7 @@ Deno.serve(async (req) => {
     data: { user: caller },
   } = await callerClient.auth.getUser()
 
-  if (!caller || caller.app_metadata?.role !== 'admin') {
+  if (!caller || !STAFF_ROLES.includes(caller.app_metadata?.role)) {
     return json({ error: 'Kamu bukan admin.' }, 403)
   }
 
@@ -70,6 +71,10 @@ Deno.serve(async (req) => {
   if (action === 'delete') {
     const { error } = await adminClient.auth.admin.deleteUser(userId)
     if (error) return json({ error: error.message }, 500)
+
+    // lets the admin Overview page's realtime subscription know to refetch
+    await adminClient.from('user_events').insert({ event_type: 'delete', user_id: userId })
+
     return json({ success: true })
   }
 
@@ -97,6 +102,9 @@ Deno.serve(async (req) => {
     },
   })
   if (error) return json({ error: error.message }, 500)
+
+  // lets the admin Overview page's realtime subscription know to refetch
+  await adminClient.from('user_events').insert({ event_type: action, user_id: userId })
 
   return json({ success: true })
 })
