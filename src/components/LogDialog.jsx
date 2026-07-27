@@ -1,3 +1,38 @@
+import { useEffect, useRef, useState } from "react";
+
+const DOT_SPACING_PX = 8; // h-1 (4px) + gap-1 (4px)
+
+function LogConnector() {
+  const ref = useRef(null);
+  const [count, setCount] = useState(2);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      const dots = Math.round(entry.contentRect.height / DOT_SPACING_PX);
+      setCount(Math.max(2, dots));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="flex flex-1 flex-col items-center justify-center gap-1 py-1"
+    >
+      {Array.from({ length: count }).map((_, dotIndex) => (
+        <span
+          key={dotIndex}
+          className="h-1 w-1 shrink-0 rounded-full bg-zinc-300"
+        />
+      ))}
+    </div>
+  );
+}
+
 function formatLogDate(value) {
   const d = new Date(value);
   const pad = (n) => String(n).padStart(2, "0");
@@ -8,6 +43,16 @@ function formatLogDate(value) {
 
 function isUnbanLog(log) {
   return log.action ? log.action === "unban" : log.message.includes("unban");
+}
+
+function isPermanentBanLog(log) {
+  return log.message.includes("permanen");
+}
+
+function nodeColor(log) {
+  if (isUnbanLog(log)) return "bg-emerald-400";
+  if (isPermanentBanLog(log)) return "bg-red-500";
+  return "bg-amber-400";
 }
 
 export default function LogDialog({ open, email, logs, onClose }) {
@@ -30,21 +75,14 @@ export default function LogDialog({ open, email, logs, onClose }) {
           {ordered.map((log, i) => (
             <div key={i} className="flex gap-4">
               <div className="flex flex-col items-center">
-                <span
-                  className={`h-5 w-5 shrink-0 rounded-full border-[2.5px] border-zinc-900 ${
-                    isUnbanLog(log) ? "bg-emerald-300" : "bg-red-300"
-                  }`}
-                />
-                {i < ordered.length - 1 && (
-                  <div className="flex flex-1 flex-col items-center justify-center gap-1">
-                    {Array.from({ length: 2 }).map((_, dotIndex) => (
-                      <span
-                        key={dotIndex}
-                        className="h-1 w-1 shrink-0 rounded-full bg-zinc-300"
-                      />
-                    ))}
-                  </div>
-                )}
+                <div className="flex h-6 items-center">
+                  <span
+                    className={`h-3.5 w-3.5 shrink-0 rounded-full border-2 border-zinc-900 ${nodeColor(
+                      log,
+                    )}`}
+                  />
+                </div>
+                {i < ordered.length - 1 && <LogConnector />}
               </div>
               <p className="pb-8 text-sm leading-6 text-zinc-700">
                 {formatLogDate(log.at)} : {log.message}

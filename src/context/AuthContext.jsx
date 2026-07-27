@@ -4,6 +4,11 @@ import BannedNotice from '../components/BannedNotice'
 
 const AuthContext = createContext(null)
 
+const SESSION_MAX_AGE_MS = 3 * 60 * 60 * 1000 // 3 jam sejak aktivitas terakhir
+const LAST_ACTIVITY_KEY = 'session_last_activity'
+const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'touchstart', 'scroll']
+const ACTIVITY_THROTTLE_MS = 30 * 1000 // gak perlu nulis localStorage tiap event
+
 export function AuthProvider({ children }) {
   // undefined = still checking, null = confirmed logged out
   const [session, setSession] = useState(undefined)
@@ -16,12 +21,65 @@ export function AuthProvider({ children }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'SIGNED_IN') {
+        localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString())
+      }
+      if (event === 'SIGNED_OUT') {
+        localStorage.removeItem(LAST_ACTIVITY_KEY)
+      }
       setSession(nextSession)
     })
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // force sign-out after 3 hours of no activity (Supabase's own
+  // "Inactivity timeout" setting needs a paid plan). Any click/keypress/
+  // scroll/touch refreshes the clock, so it only fires once the user's
+  // genuinely been idle — including "closed the tab and came back a day
+  // later" once that idle gap crosses 3 hours.
+  useEffect(() => {
+    const userId = session?.user?.id
+    if (!userId) return
+
+    function markActive() {
+      localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString())
+    }
+
+    function checkExpiry() {
+      const lastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY))
+      if (!lastActivity) {
+        markActive()
+        return
+      }
+      if (Date.now() - lastActivity > SESSION_MAX_AGE_MS) {
+        supabase.auth.signOut()
+      }
+    }
+
+    checkExpiry()
+
+    let lastMarked = Date.now()
+    function handleActivity() {
+      const now = Date.now()
+      if (now - lastMarked < ACTIVITY_THROTTLE_MS) return
+      lastMarked = now
+      markActive()
+    }
+
+    ACTIVITY_EVENTS.forEach((eventName) =>
+      window.addEventListener(eventName, handleActivity, { passive: true }),
+    )
+    const interval = setInterval(checkExpiry, 60 * 1000)
+
+    return () => {
+      ACTIVITY_EVENTS.forEach((eventName) =>
+        window.removeEventListener(eventName, handleActivity),
+      )
+      clearInterval(interval)
+    }
+  }, [session?.user?.id])
 
   // tracks this user's own presence + listens for everyone else's, so any
   // component can read live "who's online" via onlineUserIds
@@ -70,7 +128,8 @@ export function AuthProvider({ children }) {
   const value = {
     session,
     user: session?.user ?? null,
-    isAdmin: session?.user?.app_metadata?.role === 'admin',
+    role: session?.user?.app_metadata?.role ?? 'user',
+    isAdmin: ['admin', 'moderator'].includes(session?.user?.app_metadata?.role),
     isLoading: session === undefined,
     onlineUserIds,
     broadcastUserBanned,

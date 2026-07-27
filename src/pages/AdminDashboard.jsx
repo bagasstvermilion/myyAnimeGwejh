@@ -4,7 +4,7 @@ import Spinner from '../components/Spinner'
 import AdminSidebar from '../components/AdminSidebar'
 
 export default function AdminDashboard() {
-  const { user, isAdmin, isLoading } = useAuth()
+  const { user, isAdmin, role, isLoading } = useAuth()
 
   if (isLoading) {
     return (
@@ -24,7 +24,7 @@ export default function AdminDashboard() {
       <div className="pl-14">
         <div className="px-8 py-12 lg:px-14">
           <h1 className="font-display text-2xl font-semibold text-zinc-900">
-            Dashboard Admin
+            {role === 'moderator' ? 'Dashboard Moderator' : 'Dashboard Admin'}
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
             Kelola akses dan pengaturan aplikasi.

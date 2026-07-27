@@ -22,7 +22,7 @@ function displayNameFromEmail(email) {
 
 export default function Navbar() {
   const location = useLocation();
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, role, signOut } = useAuth();
   const itemRefs = useRef([]);
   const [underline, setUnderline] = useState({
     left: 0,
@@ -204,7 +204,7 @@ export default function Navbar() {
                             strokeLinejoin="round"
                           />
                         </svg>
-                        Dashboard Admin
+                        {role === "moderator" ? "Dashboard Moderator" : "Dashboard Admin"}
                       </Link>
                     </div>
                   )}
