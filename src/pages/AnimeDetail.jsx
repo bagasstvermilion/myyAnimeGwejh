@@ -190,7 +190,7 @@ export default function AnimeDetail() {
                 ) : (
                   <span
                     aria-hidden
-                    className="h-7 w-7 bg-gradient-to-br from-pink-400 to-violet-600"
+                    className="inline-block h-7 w-7 bg-gradient-to-br from-pink-400 to-violet-600"
                     style={{
                       WebkitMaskImage: `url(${translateIcon})`,
                       maskImage: `url(${translateIcon})`,

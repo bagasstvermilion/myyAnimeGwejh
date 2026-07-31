@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 export default function MobileNavSidebar({ open, items, topOffset, onClose }) {
   return (
     <div
+      data-cy="mobile-nav-sidebar"
       className={`fixed inset-x-0 bottom-0 z-50 md:hidden ${open ? "" : "pointer-events-none"}`}
       style={{ top: topOffset }}
       aria-hidden={!open}
