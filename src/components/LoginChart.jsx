@@ -55,7 +55,7 @@ export default function LoginChart({ events }) {
 
       <div
         ref={containerRef}
-        className="relative mt-4 flex-1"
+        className="relative mt-4 min-h-[160px] flex-1"
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHovered(null)}
       >

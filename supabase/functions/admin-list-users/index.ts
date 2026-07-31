@@ -50,6 +50,7 @@ Deno.serve(async (req) => {
     .map((u) => ({
       id: u.id,
       email: u.email,
+      name: u.user_metadata?.display_name ?? null,
       role: STAFF_ROLES.includes(u.app_metadata?.role) ? u.app_metadata.role : 'user',
       createdAt: u.created_at,
       lastSignInAt: u.last_sign_in_at,

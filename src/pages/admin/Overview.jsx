@@ -45,7 +45,11 @@ export default function Overview() {
     queryFn: fetchUsers,
   });
 
-  const { data: loginEvents } = useQuery({
+  const {
+    data: loginEvents,
+    isError: isLoginEventsError,
+    error: loginEventsError,
+  } = useQuery({
     queryKey: ["admin-login-events"],
     queryFn: () => fetchLoginEvents(14),
   });
@@ -120,7 +124,14 @@ export default function Overview() {
             />
           </div>
 
-          <LoginChart events={loginEvents ?? []} />
+          <div>
+            {isLoginEventsError && (
+              <p className="mb-2 text-xs text-red-500">
+                Gagal memuat data login: {loginEventsError.message}
+              </p>
+            )}
+            <LoginChart events={loginEvents ?? []} />
+          </div>
         </div>
       )}
 

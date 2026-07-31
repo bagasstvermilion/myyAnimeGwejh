@@ -7,6 +7,7 @@ import { translateText } from "../lib/translate";
 import translateIcon from "../assets/img/translate-icon.png";
 import Spinner from "../components/Spinner";
 import WatchlistButton from "../components/WatchlistButton";
+import PhotoLightbox from "../components/dialog/PhotoLightbox";
 
 function StatCard({ label, value }) {
   return (
@@ -31,6 +32,7 @@ export default function AnimeDetail() {
   const [translated, setTranslated] = useState(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [translateError, setTranslateError] = useState(false);
+  const [coverPreviewOpen, setCoverPreviewOpen] = useState(false);
 
   // reset the translation state whenever the user opens a different anime
   useEffect(() => {
@@ -116,11 +118,18 @@ export default function AnimeDetail() {
           className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl brightness-[0.45]"
         />
         <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-end sm:gap-8 sm:p-10">
-          <img
-            src={cover}
-            alt={anime.title}
-            className="w-40 shrink-0 rounded-2xl shadow-2xl ring-1 ring-white/10 sm:w-52"
-          />
+          <button
+            type="button"
+            onClick={() => setCoverPreviewOpen(true)}
+            aria-label="Lihat cover anime"
+            className="w-40 shrink-0 cursor-pointer sm:w-52"
+          >
+            <img
+              src={cover}
+              alt={anime.title}
+              className="rounded-2xl shadow-2xl ring-1 ring-white/10 transition hover:opacity-80"
+            />
+          </button>
           <div className="pb-1">
             {anime.score && (
               <span className="mb-3 inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-sm font-medium text-amber-300 backdrop-blur-sm">
@@ -181,7 +190,7 @@ export default function AnimeDetail() {
                 ) : (
                   <span
                     aria-hidden
-                    className="h-7 w-7 bg-gradient-to-br from-pink-400 to-violet-600"
+                    className="inline-block h-7 w-7 bg-gradient-to-br from-pink-400 to-violet-600"
                     style={{
                       WebkitMaskImage: `url(${translateIcon})`,
                       maskImage: `url(${translateIcon})`,
@@ -230,6 +239,12 @@ export default function AnimeDetail() {
           )}
         </aside>
       </div>
+
+      <PhotoLightbox
+        open={coverPreviewOpen}
+        src={cover}
+        onClose={() => setCoverPreviewOpen(false)}
+      />
     </div>
   );
 }
