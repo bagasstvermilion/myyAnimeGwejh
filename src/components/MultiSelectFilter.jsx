@@ -29,7 +29,7 @@ export default function MultiSelectFilter({ label, options, selected, onChange }
         type="button"
         onClick={() => setOpen((o) => !o)}
         style={gradientBorderStyle(selected.length ? '#f6effc' : '#fafafa')}
-        className="flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-zinc-900 transition hover:opacity-80"
+        className="flex cursor-pointer items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-zinc-900 transition hover:opacity-80 sm:gap-1.5 sm:px-4 sm:py-1.5 sm:text-sm"
       >
         {label}
         {/* fixed width (not just reserved-when-empty) so the button never

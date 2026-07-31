@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { checkBanStatus } from "../lib/banStatus";
 import DotDecoration from "../components/DotDecoration";
-import BanCountdownDialog from "../components/BanCountdownDialog";
+import BanCountdownDialog from "../components/dialog/BanCountdownDialog";
 import userLogo from "../assets/img/user-logo.png";
 
 export default function Login() {

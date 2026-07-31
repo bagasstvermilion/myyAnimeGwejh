@@ -117,7 +117,7 @@ export default function Browse() {
   const hasFilters = genre.length > 0 || format.length > 0;
 
   return (
-    <div className="mx-auto max-w-[1440px] px-8 lg:px-14 py-12">
+    <div className="mx-auto max-w-[1440px] px-4 py-12 sm:px-8 lg:px-14">
       <div className="mb-4 max-w-xl">
         <h1 className="text-2xl font-semibold text-zinc-900">Browse Anime</h1>
         <p className="mt-1 text-sm text-zinc-500">
@@ -128,22 +128,22 @@ export default function Browse() {
         </div>
       </div>
 
-      <div className="mb-10 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-10 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex flex-nowrap items-center gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible">
           {TABS.map((t) => (
             <button
               key={t.key}
               type="button"
               onClick={() => selectTab(t.key)}
               style={tabStyle(!search && tab === t.key)}
-              className="cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium text-zinc-900 transition hover:opacity-80"
+              className="shrink-0 cursor-pointer rounded-full px-3 py-1 text-xs font-medium text-zinc-900 transition hover:opacity-80 sm:px-4 sm:py-1.5 sm:text-sm"
             >
               {t.label}
             </button>
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <MultiSelectFilter
             label="Genre"
             options={GENRES}

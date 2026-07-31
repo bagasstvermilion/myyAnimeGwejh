@@ -100,7 +100,7 @@ export default function MyList() {
             type="button"
             onClick={() => setTab(t.value)}
             style={tabStyle(tab === t.value)}
-            className="cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium text-zinc-900 transition hover:opacity-80"
+            className="cursor-pointer rounded-full px-3 py-1 text-xs font-medium text-zinc-900 transition hover:opacity-80 sm:px-4 sm:py-1.5 sm:text-sm"
           >
             {t.label}
           </button>

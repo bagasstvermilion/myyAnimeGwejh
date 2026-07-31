@@ -22,6 +22,26 @@ export function statusColor(value) {
   return STATUS_COLORS[value] ?? 'text-zinc-500'
 }
 
+export function episodeDisplay(entry) {
+  const total = entry.total_episodes
+  const current = entry.current_episode ?? 0
+
+  if (entry.status === 'completed') {
+    return { text: total ? `${total}/${total}` : '?/?', showIncrement: false }
+  }
+  if (entry.status === 'plan_to_watch') {
+    // hasn't started yet, so there's no episode progress — but the total
+    // episode count is still worth showing
+    return { text: `-/${total ?? '?'}`, showIncrement: false }
+  }
+  // watching or dropped — both track how far they got, only "watching" gets
+  // the +1 button
+  return {
+    text: `${current}/${total ?? '?'}`,
+    showIncrement: entry.status === 'watching',
+  }
+}
+
 export async function getWatchlist(userId) {
   const { data, error } = await supabase
     .from('watchlist')
@@ -45,7 +65,14 @@ export async function getWatchlistEntry(userId, animeId) {
   return data
 }
 
-export async function upsertWatchlistEntry({ userId, animeId, title, coverImage, status }) {
+export async function upsertWatchlistEntry({
+  userId,
+  animeId,
+  title,
+  coverImage,
+  status,
+  totalEpisodes,
+}) {
   const { data, error } = await supabase
     .from('watchlist')
     .upsert(
@@ -55,10 +82,40 @@ export async function upsertWatchlistEntry({ userId, animeId, title, coverImage,
         title,
         cover_image: coverImage,
         status,
+        total_episodes: totalEpisodes ?? null,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'user_id,anime_id' },
     )
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function updateEpisodeProgress(userId, animeId, currentEpisode) {
+  const { data, error } = await supabase
+    .from('watchlist')
+    .update({
+      current_episode: currentEpisode,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', userId)
+    .eq('anime_id', animeId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function backfillTotalEpisodes(userId, animeId, totalEpisodes) {
+  const { data, error } = await supabase
+    .from('watchlist')
+    .update({ total_episodes: totalEpisodes })
+    .eq('user_id', userId)
+    .eq('anime_id', animeId)
     .select()
     .single()
 

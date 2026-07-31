@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import BannedNotice from '../components/BannedNotice'
+import BannedNotice from '../components/dialog/BannedNotice'
 
 const AuthContext = createContext(null)
 

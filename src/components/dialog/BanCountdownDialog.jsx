@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import warningIcon from '../assets/img/warning.png'
+import warningIcon from '../../assets/img/warning.png'
 
 const PERMANENT_THRESHOLD_YEARS = 50
 

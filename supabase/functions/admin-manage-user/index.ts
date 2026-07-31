@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
   const { data: target, error: getError } = await adminClient.auth.admin.getUserById(userId)
   if (getError || !target.user) return json({ error: 'Akun tidak ditemukan.' }, 404)
 
-  const actorName = caller.email?.split('@')[0] ?? 'admin'
+  const actorName = caller.user_metadata?.display_name || caller.email?.split('@')[0] || 'admin'
   const message =
     action === 'ban'
       ? `${actorName} telah mem-banned user tersebut selama ${DURATION_LABELS[duration]}${reason ? ` (Alasan: ${reason})` : ''}`

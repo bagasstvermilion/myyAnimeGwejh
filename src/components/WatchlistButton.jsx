@@ -47,6 +47,7 @@ export default function WatchlistButton({ anime }) {
         title: anime.title_english || anime.title,
         coverImage: anime.images?.webp?.image_url,
         status,
+        totalEpisodes: anime.episodes,
       }),
     onSuccess: () => {
       invalidate()

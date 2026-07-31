@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import warningIcon from '../assets/img/warning.png'
+import warningIcon from '../../assets/img/warning.png'
 
 export default function BannedNotice({ details, onClose }) {
   const navigate = useNavigate()
