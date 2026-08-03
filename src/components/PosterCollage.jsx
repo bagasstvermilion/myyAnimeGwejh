@@ -66,6 +66,7 @@ export default function PosterCollage() {
                   src={anime.images?.webp?.image_url}
                   alt={turn === 0 ? anime.title : ''}
                   aria-hidden={turn !== 0}
+                  draggable={false}
                   style={{
                     animationDelay: isCycling ? `-${turn * TURN_SECONDS}s` : undefined,
                     opacity: isCycling ? undefined : 1,

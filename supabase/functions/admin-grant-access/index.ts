@@ -1,6 +1,6 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
-const VALID_ROLES = ['admin', 'moderator', 'user']
+const VALID_ROLES = ['admin', 'moderator', 'tester', 'user']
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
 
   const { userId, role } = await req.json()
   if (!userId || !VALID_ROLES.includes(role)) {
-    return json({ error: 'userId dan role (admin/moderator/user) wajib diisi.' }, 400)
+    return json({ error: 'userId dan role (admin/moderator/tester/user) wajib diisi.' }, 400)
   }
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey)

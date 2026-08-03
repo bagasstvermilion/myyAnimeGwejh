@@ -11,6 +11,7 @@ const MEDIA_FIELDS = `
     large
     extraLarge
   }
+  bannerImage
   averageScore
   episodes
   duration
@@ -101,6 +102,7 @@ function normalize(media) {
         large_image_url: media.coverImage?.extraLarge || media.coverImage?.large,
       },
     },
+    banner: media.bannerImage,
     score: media.averageScore ? (media.averageScore / 10).toFixed(1) : null,
     type: media.format,
     episodes: media.episodes,
@@ -116,6 +118,13 @@ function normalize(media) {
         ? [media.startDate.day, media.startDate.month, media.startDate.year].filter(Boolean).join('/')
         : null,
     },
+    characters:
+      media.characters?.edges?.map((edge) => ({
+        id: edge.node.id,
+        name: edge.node.name?.full,
+        image: edge.node.image?.large,
+        role: edge.role,
+      })) ?? [],
   }
 }
 
@@ -261,6 +270,20 @@ export async function getAnimeById(id) {
     query ($id: Int) {
       Media(id: $id, type: ANIME) {
         ${MEDIA_FIELDS}
+        characters(sort: [ROLE, FAVOURITES_DESC], perPage: 24) {
+          edges {
+            role
+            node {
+              id
+              name {
+                full
+              }
+              image {
+                large
+              }
+            }
+          }
+        }
       }
     }
   `

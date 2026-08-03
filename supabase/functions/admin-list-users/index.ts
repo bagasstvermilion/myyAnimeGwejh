@@ -1,6 +1,8 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const STAFF_ROLES = ['admin', 'moderator']
+// roles shown as-is in the table; anything else (or unset) displays as 'user'
+const KNOWN_ROLES = ['admin', 'moderator', 'tester']
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,7 +53,7 @@ Deno.serve(async (req) => {
       id: u.id,
       email: u.email,
       name: u.user_metadata?.display_name ?? null,
-      role: STAFF_ROLES.includes(u.app_metadata?.role) ? u.app_metadata.role : 'user',
+      role: KNOWN_ROLES.includes(u.app_metadata?.role) ? u.app_metadata.role : 'user',
       createdAt: u.created_at,
       lastSignInAt: u.last_sign_in_at,
       isBanned: !!u.banned_until && new Date(u.banned_until) > new Date(),

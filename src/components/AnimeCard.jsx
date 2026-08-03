@@ -8,6 +8,7 @@ export default function AnimeCard({ anime, rank }) {
     <div className="group relative">
       <Link
         to={`/anime/${anime.mal_id}`}
+        draggable={false}
         className="flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-100 transition hover:-translate-y-1 hover:shadow-lg hover:ring-violet-200"
       >
         <div className="aspect-[2/3] overflow-hidden bg-zinc-100">
@@ -15,14 +16,15 @@ export default function AnimeCard({ anime, rank }) {
             src={image}
             alt={title}
             loading="lazy"
+            draggable={false}
             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
           />
         </div>
-        <div className="flex flex-1 flex-col gap-1.5 p-4">
-          <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug text-zinc-900">
+        <div className="flex flex-1 flex-col gap-1 p-2 sm:gap-1.5 sm:p-4">
+          <h3 className="line-clamp-2 min-h-[2rem] text-xs font-medium leading-snug text-zinc-900 sm:min-h-[2.5rem] sm:text-sm">
             {title}
           </h3>
-          <div className="mt-auto flex items-center gap-2 text-xs text-zinc-400">
+          <div className="mt-auto flex items-center gap-2 text-[10px] text-zinc-400 sm:text-xs">
             {anime.score && (
               <span className="flex items-center gap-1 font-medium text-amber-500">
                 ★ {anime.score}
