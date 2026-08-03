@@ -97,6 +97,7 @@ export default function WatchlistCard({ entry }) {
     <div className="group relative">
       <Link
         to={`/anime/${entry.anime_id}`}
+        draggable={false}
         className="flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-100 transition hover:-translate-y-1 hover:shadow-lg hover:ring-violet-200"
       >
         <div className="aspect-[2/3] overflow-hidden bg-zinc-100">
@@ -104,6 +105,7 @@ export default function WatchlistCard({ entry }) {
             src={entry.cover_image}
             alt={entry.title}
             loading="lazy"
+            draggable={false}
             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
           />
         </div>

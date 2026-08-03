@@ -12,6 +12,7 @@ export default function RoleSelect({ id, value, onChange, disabled, title }) {
         className="cursor-pointer appearance-none rounded-full bg-white py-1.5 pl-3 pr-7 text-xs font-medium text-zinc-700 outline-none transition focus:ring-2 focus:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <option value="user">User</option>
+        <option value="tester">Tester</option>
         <option value="moderator">Moderator</option>
         <option value="admin">Admin</option>
       </select>

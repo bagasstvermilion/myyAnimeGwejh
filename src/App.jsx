@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import AssistiveTouch from './components/AssistiveTouch'
 import Home from './pages/Home'
 import Browse from './pages/Browse'
 import AnimeDetail from './pages/AnimeDetail'
@@ -33,6 +34,7 @@ function App() {
         </Routes>
       </div>
       <Footer />
+      <AssistiveTouch />
     </div>
   )
 }

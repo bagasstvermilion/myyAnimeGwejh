@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
@@ -17,6 +17,7 @@ export default function WatchlistButton({ anime }) {
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
+  const gradientId = `watchlist-bookmark-gradient-${useId()}`
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -88,14 +89,14 @@ export default function WatchlistButton({ anime }) {
         {entry ? (
           <svg viewBox="0 0 24 24" fill="none" className="h-4.5 w-4.5" aria-hidden>
             <defs>
-              <linearGradient id="watchlist-bookmark-gradient" x1="0" y1="0" x2="24" y2="24">
+              <linearGradient id={gradientId} x1="0" y1="0" x2="24" y2="24">
                 <stop offset="0" stopColor="#f472b6" />
                 <stop offset="1" stopColor="#7c3aed" />
               </linearGradient>
             </defs>
             <path
               d="M6 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v16l-6-4-6 4V4z"
-              fill="url(#watchlist-bookmark-gradient)"
+              fill={`url(#${gradientId})`}
             />
           </svg>
         ) : (

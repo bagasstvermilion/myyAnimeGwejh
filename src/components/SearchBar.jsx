@@ -1,16 +1,16 @@
-import { useState } from 'react'
+import { useState } from "react";
 
-export default function SearchBar({ onSearch, defaultValue = '' }) {
-  const [query, setQuery] = useState(defaultValue)
+export default function SearchBar({ onSearch, defaultValue = "" }) {
+  const [query, setQuery] = useState(defaultValue);
 
   function handleSubmit(e) {
-    e.preventDefault()
-    onSearch(query.trim())
+    e.preventDefault();
+    onSearch(query.trim());
   }
 
   function handleClear() {
-    setQuery('')
-    onSearch('')
+    setQuery("");
+    onSearch("");
   }
 
   return (
@@ -21,7 +21,7 @@ export default function SearchBar({ onSearch, defaultValue = '' }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Cari anime..."
-          className="w-full rounded-full border border-zinc-200 bg-white px-5 py-3 pr-12 text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100"
+          className="w-full rounded-full border border-zinc-200 bg-white px-4 py-3 pr-12 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100 sm:px-5 sm:py-3 sm:text-base"
         />
         {query && (
           <button
@@ -36,10 +36,10 @@ export default function SearchBar({ onSearch, defaultValue = '' }) {
       </div>
       <button
         type="submit"
-        className="cursor-pointer rounded-full bg-zinc-900 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:opacity-80"
+        className="cursor-pointer rounded-full bg-zinc-900 px-4 py-2 text-xs font-medium text-white shadow-sm transition hover:opacity-80 sm:px-6 sm:py-3 sm:text-sm"
       >
         Cari
       </button>
     </form>
-  )
+  );
 }

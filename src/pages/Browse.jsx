@@ -136,7 +136,7 @@ export default function Browse() {
               type="button"
               onClick={() => selectTab(t.key)}
               style={tabStyle(!search && tab === t.key)}
-              className="shrink-0 cursor-pointer rounded-full px-3 py-1 text-xs font-medium text-zinc-900 transition hover:opacity-80 sm:px-4 sm:py-1.5 sm:text-sm"
+              className="shrink-0 cursor-pointer rounded-full px-3 py-2 text-xs font-medium text-zinc-900 transition hover:opacity-80 sm:px-4 sm:py-1.5 sm:text-sm"
             >
               {t.label}
             </button>
