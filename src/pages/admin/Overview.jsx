@@ -84,7 +84,7 @@ export default function Overview() {
         Overview
       </h2>
       <p className="mt-1 max-w-md text-sm text-zinc-500">
-        Ringkasan aktivitas user di Myy Anime Gwejh.
+        Ringkasan aktivitas user di MyAnimeGwe.
       </p>
 
       {isLoading && <Spinner label="Memuat data..." />}

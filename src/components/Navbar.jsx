@@ -28,13 +28,7 @@ const NAV_ITEMS = [
     end: false,
     icon: (
       <>
-        <circle
-          cx="11"
-          cy="11"
-          r="7"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
+        <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
         <path
           d="M21 21l-4.35-4.35"
           stroke="currentColor"
@@ -125,7 +119,12 @@ export default function Navbar() {
               aria-label="Buka menu"
               className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-zinc-600 transition hover:bg-zinc-100 md:hidden"
             >
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-5 w-5"
+                aria-hidden
+              >
                 {mobileMenuOpen ? (
                   <path
                     d="M6 6l12 12M18 6 6 18"
@@ -149,7 +148,7 @@ export default function Navbar() {
             <NavLink to="/" className="flex items-center gap-2">
               <img src={logo} alt="" className="h-8 w-8" />
               <span className="hidden font-display text-lg font-semibold text-zinc-900 sm:inline">
-                Myy Anime Gwejh
+                MyAnimeGwe
               </span>
             </NavLink>
           </div>
