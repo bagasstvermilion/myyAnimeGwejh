@@ -146,7 +146,7 @@ export default function Navbar() {
             </button>
 
             <NavLink to="/" className="flex items-center gap-2">
-              <img src={logo} alt="" className="h-8 w-8" />
+              <img src={logo} alt="Logo MyAnimeGwe" className="h-8 w-8" />
               <span className="hidden font-display text-lg font-semibold text-zinc-900 sm:inline">
                 MyAnimeGwe
               </span>
