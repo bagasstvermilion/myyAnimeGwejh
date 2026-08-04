@@ -5,7 +5,7 @@ Personal anime tracker. tempat nyimpen catatan anime yang pernah ditonton, cari 
 ## Akses Web Disini
 
 ```bash
-https://myy-anime-gwejh.vercel.app/
+https://myanimegwe.com
 ```
 
 ## Preview
