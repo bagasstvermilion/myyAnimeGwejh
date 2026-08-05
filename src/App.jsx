@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import AssistiveTouch from './components/AssistiveTouch'
@@ -35,6 +36,7 @@ function App() {
       </div>
       <Footer />
       <AssistiveTouch />
+      <Analytics />
     </div>
   )
 }
