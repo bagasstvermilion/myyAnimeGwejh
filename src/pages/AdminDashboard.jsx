@@ -1,10 +1,12 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useNoIndex } from '../lib/useMetaTags'
 import Spinner from '../components/Spinner'
 import AdminSidebar from '../components/AdminSidebar'
 
 export default function AdminDashboard() {
   const { user, isAdmin, role, isLoading } = useAuth()
+  useNoIndex()
 
   if (isLoading) {
     return (

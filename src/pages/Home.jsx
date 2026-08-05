@@ -1,5 +1,11 @@
-import Hero from '../components/Hero'
+import Hero from "../components/Hero";
+import { useMetaTags } from "../lib/useMetaTags";
 
 export default function Home() {
-  return <Hero />
+  useMetaTags(
+    "Home - MyAnimeGwe",
+    "Catat, cari, dan pantau progress nonton anime kamu sendiri. Lengkap sampai ke detail informasi dan jadwalnya!",
+  );
+
+  return <Hero />;
 }

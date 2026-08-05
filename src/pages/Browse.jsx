@@ -9,6 +9,7 @@ import {
   FORMATS,
 } from "../lib/anilist";
 import { gradientBorderStyle } from "../lib/gradientBorder";
+import { useMetaTags } from "../lib/useMetaTags";
 import SearchBar from "../components/SearchBar";
 import AnimeGrid from "../components/AnimeGrid";
 import Pagination from "../components/Pagination";
@@ -115,6 +116,13 @@ export default function Browse() {
 
   const heading = search ? `Hasil untuk "${search}"` : activeTab.label;
   const hasFilters = genre.length > 0 || format.length > 0;
+
+  useMetaTags(
+    search
+      ? `Hasil untuk "${search}" - MyAnimeGwe`
+      : `Browse Anime - ${activeTab.label} - MyAnimeGwe`,
+    "Cari judul anime favorit kamu atau lihat anime paling populer, musim ini, dan yang akan tayang.",
+  );
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-12 sm:px-8 lg:px-14">

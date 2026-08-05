@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 import { gradientBorderStyle } from "../lib/gradientBorder";
 import { STATUSES, getWatchlist } from "../lib/watchlist";
+import { useMetaTags } from "../lib/useMetaTags";
 import Spinner from "../components/Spinner";
 import WatchlistCard from "../components/WatchlistCard";
 import SearchBar from "../components/SearchBar";
@@ -20,6 +21,11 @@ export default function MyList() {
   const location = useLocation();
   const [tab, setTab] = useState("all");
   const [search, setSearch] = useState("");
+
+  useMetaTags(
+    "My List - MyAnimeGwe",
+    "Kelola daftar anime yang udah kamu simpan dan pantau progress nonton kamu.",
+  );
 
   const {
     data: watchlist,

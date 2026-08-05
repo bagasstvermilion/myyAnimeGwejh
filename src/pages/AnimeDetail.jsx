@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getAnimeById } from "../lib/anilist";
 import { gradientBorderStyle } from "../lib/gradientBorder";
+import { useMetaTags } from "../lib/useMetaTags";
 import { translateText } from "../lib/translate";
 import translateIcon from "../assets/img/translate-icon.png";
 import Spinner from "../components/Spinner";
@@ -53,6 +54,11 @@ export default function AnimeDetail() {
   const anime = data?.data;
   const cover =
     anime?.images?.webp?.large_image_url || anime?.images?.webp?.image_url;
+
+  useMetaTags(
+    anime ? `${anime.title_english || anime.title} - MyAnimeGwe` : undefined,
+    anime?.synopsis ? anime.synopsis.slice(0, 160) : undefined,
+  );
 
   // reset the translation state whenever the user opens a different anime
   useEffect(() => {

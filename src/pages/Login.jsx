@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { checkBanStatus } from "../lib/banStatus";
+import { useMetaTags } from "../lib/useMetaTags";
 import DotDecoration from "../components/DotDecoration";
 import BanCountdownDialog from "../components/dialog/BanCountdownDialog";
 import userLogo from "../assets/img/user-logo.png";
@@ -19,6 +20,11 @@ export default function Login() {
   const [message, setMessage] = useState("");
   const [banInfo, setBanInfo] = useState(null);
 
+  useMetaTags(
+    "Masuk - MyAnimeGwe",
+    "Masuk untuk mengelola daftar anime dan progress nonton kamu di MyAnimeGwe.",
+  );
+
   async function handleSubmit(e) {
     e.preventDefault();
     setIsSubmitting(true);
@@ -32,7 +38,9 @@ export default function Login() {
         ? supabase.auth.signInWithPassword({ email, password })
         : supabase.auth.signUp({ email, password });
     const banStatusPromise =
-      mode === "signin" ? checkBanStatus(email) : Promise.resolve({ banned: false });
+      mode === "signin"
+        ? checkBanStatus(email)
+        : Promise.resolve({ banned: false });
 
     const [{ error: authError }, banStatus] = await Promise.all([
       authPromise,
@@ -119,9 +127,7 @@ export default function Login() {
               <p className="line-clamp-1 text-sm text-red-500">{error}</p>
             )}
             {message && (
-              <p className="line-clamp-1 text-sm text-emerald-600">
-                {message}
-              </p>
+              <p className="line-clamp-1 text-sm text-emerald-600">{message}</p>
             )}
           </div>
 
