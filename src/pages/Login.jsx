@@ -31,15 +31,22 @@ export default function Login() {
     setError("");
     setMessage("");
 
+    // let people type just "admin" instead of a full address — only fall
+    // back to @gmail.com when they haven't typed an "@" themselves, so
+    // "admin@jp.com" still goes through untouched
+    const finalEmail = email.includes("@")
+      ? email.trim()
+      : `${email.trim()}@gmail.com`;
+
     // fire both requests together — checking ban status doesn't depend on
     // the sign-in result, so there's no need to wait for it to fail first
     const authPromise =
       mode === "signin"
-        ? supabase.auth.signInWithPassword({ email, password })
-        : supabase.auth.signUp({ email, password });
+        ? supabase.auth.signInWithPassword({ email: finalEmail, password })
+        : supabase.auth.signUp({ email: finalEmail, password });
     const banStatusPromise =
       mode === "signin"
-        ? checkBanStatus(email)
+        ? checkBanStatus(finalEmail)
         : Promise.resolve({ banned: false });
 
     const [{ error: authError }, banStatus] = await Promise.all([
@@ -73,15 +80,24 @@ export default function Login() {
     setMessage("");
   }
 
+  async function handleGoogleSignIn() {
+    setError("");
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}${from}` },
+    });
+    if (oauthError) setError(oauthError.message);
+  }
+
   return (
-    <div className="relative mx-auto flex max-w-[1440px] items-center justify-center overflow-hidden px-8 py-20 lg:px-14">
+    <div className="relative mx-auto flex min-h-[calc(100dvh-69px)] max-w-[1440px] items-center justify-center overflow-hidden px-4 py-6 sm:px-8 sm:py-10 lg:px-14">
       <DotDecoration />
 
-      <div className="relative z-10 w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl ring-1 ring-zinc-100">
+      <div className="relative z-10 w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl ring-1 ring-zinc-100 sm:p-8">
         <div className="flex flex-col items-center text-center">
           <span
             aria-hidden
-            className="h-12 w-12 bg-gradient-to-br from-pink-400 to-violet-600"
+            className="h-10 w-10 bg-gradient-to-br from-pink-400 to-violet-600 sm:h-12 sm:w-12"
             style={{
               WebkitMaskImage: `url(${userLogo})`,
               maskImage: `url(${userLogo})`,
@@ -103,15 +119,24 @@ export default function Login() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
-          <input
-            type="email"
-            required
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="rounded-full border border-zinc-200 bg-white px-5 py-3 text-zinc-900 placeholder-zinc-400 shadow-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
-          />
+        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-2 sm:mt-6 sm:gap-3">
+          <div>
+            <input
+              type="text"
+              autoCapitalize="none"
+              autoCorrect="off"
+              required
+              placeholder="Username atau email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-full border border-zinc-200 bg-white px-4 py-2.5 text-zinc-900 placeholder-zinc-400 shadow-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 sm:px-5 sm:py-3"
+            />
+            {/* {email && !email.includes("@") && (
+              <p className="mt-1 px-4 text-xs text-zinc-400">
+                Bakal masuk sebagai {email.trim()}@gmail.com
+              </p>
+            )} */}
+          </div>
           <input
             type="password"
             required
@@ -119,7 +144,7 @@ export default function Login() {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-full border border-zinc-200 bg-white px-5 py-3 text-zinc-900 placeholder-zinc-400 shadow-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+            className="rounded-full border border-zinc-200 bg-white px-4 py-2.5 text-zinc-900 placeholder-zinc-400 shadow-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 sm:px-5 sm:py-3"
           />
 
           <div className="min-h-5 px-1">
@@ -134,7 +159,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-1 cursor-pointer rounded-full bg-zinc-900 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-1 cursor-pointer rounded-full bg-zinc-900 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 sm:py-3"
           >
             {isSubmitting
               ? "Memproses..."
@@ -144,10 +169,42 @@ export default function Login() {
           </button>
         </form>
 
+        <div className="my-3 flex items-center gap-3 sm:my-5">
+          <div className="h-px flex-1 bg-zinc-100" />
+          <span className="text-xs text-zinc-400">atau</span>
+          <div className="h-px flex-1 bg-zinc-100" />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-zinc-200 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 sm:py-3"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+            <path
+              fill="#4285F4"
+              d="M23.52 12.27c0-.85-.08-1.66-.22-2.45H12v4.64h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.87c2.27-2.09 3.58-5.17 3.58-8.82Z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.87-3c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.28v3.09A12 12 0 0 0 12 24Z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.27 14.28A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.28V6.63H1.28A12 12 0 0 0 0 12c0 1.94.46 3.77 1.28 5.37l3.99-3.09Z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 4.77c1.76 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.28 6.63l3.99 3.09C6.22 6.88 8.87 4.77 12 4.77Z"
+            />
+          </svg>
+          Masuk dengan Google
+        </button>
+
         <button
           type="button"
           onClick={toggleMode}
-          className="mt-5 w-full cursor-pointer text-center text-sm font-medium text-violet-600 transition hover:opacity-70"
+          className="mt-3 w-full cursor-pointer text-center text-sm font-medium text-violet-600 transition hover:opacity-70 sm:mt-5"
         >
           {mode === "signin"
             ? "Belum punya akun? Daftar"
@@ -156,7 +213,7 @@ export default function Login() {
 
         <Link
           to="/"
-          className="mt-4 block text-center text-xs text-zinc-400 transition hover:text-zinc-600"
+          className="mt-2 block text-center text-xs text-zinc-400 transition hover:text-zinc-600 sm:mt-4"
         >
           Kembali ke Dashboard
         </Link>
