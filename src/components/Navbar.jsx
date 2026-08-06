@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import logo from "../assets/img/logo.png";
 import { useAuth } from "../context/AuthContext";
+import { largeAvatarUrl } from "../lib/avatar";
 import UserMenu from "./navbar/UserMenu";
 import MobileNavSidebar from "./navbar/MobileNavSidebar";
 import EditProfileDialog from "./dialog/EditProfileDialog";
@@ -207,7 +208,7 @@ export default function Navbar() {
 
       <PhotoLightbox
         open={photoPreviewOpen}
-        src={user?.user_metadata?.avatar_url}
+        src={largeAvatarUrl(user?.user_metadata?.avatar_url)}
         onClose={() => setPhotoPreviewOpen(false)}
       />
     </>

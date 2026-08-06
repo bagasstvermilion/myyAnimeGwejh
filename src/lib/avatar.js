@@ -17,6 +17,14 @@ export function displayName(user) {
   return user.user_metadata?.display_name || deriveNameFromEmail(user.email)
 }
 
+// Google's OAuth avatar URLs embed the requested size (e.g. "=s96-c"),
+// which defaults to a tiny thumbnail — bump it up for full-size previews
+export function largeAvatarUrl(url, size = 512) {
+  if (!url) return url
+  if (!url.includes('googleusercontent.com')) return url
+  return url.replace(/=s\d+/, `=s${size}`)
+}
+
 export async function uploadAvatar(file, userId) {
   if (!file.type.startsWith('image/')) {
     throw new Error('File harus berupa gambar.')
