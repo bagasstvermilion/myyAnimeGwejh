@@ -34,6 +34,26 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Google OAuth failures (banned accounts included) come back as error
+  // params in the URL hash after the Google -> Supabase -> app redirect,
+  // rather than as a normal rejected promise like email/password login —
+  // this can land on any page (whatever `redirectTo` was), so it has to be
+  // checked globally instead of just on the Login page
+  useEffect(() => {
+    const hash = window.location.hash
+    if (!hash.includes('error')) return
+
+    const params = new URLSearchParams(hash.slice(1))
+    const description = (params.get('error_description') || '').replace(/\+/g, ' ')
+
+    if (description.toLowerCase().includes('banned')) {
+      setBannedNotice({})
+    }
+
+    // drop the error params so they don't linger in the URL or resurface on refresh
+    window.history.replaceState(null, '', window.location.pathname + window.location.search)
+  }, [])
+
   // force sign-out after 3 hours of no activity (Supabase's own
   // "Inactivity timeout" setting needs a paid plan). Any click/keypress/
   // scroll/touch refreshes the clock, so it only fires once the user's
