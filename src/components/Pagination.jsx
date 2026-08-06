@@ -49,7 +49,7 @@ export default function Pagination({ page, lastPage, hasNextPage, onChange }) {
           className="flex cursor-pointer items-center justify-center px-1.5 py-2 transition hover:opacity-70"
         >
           {n === page ? (
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 to-violet-600 text-white">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 text-white">
               {n}
             </span>
           ) : (

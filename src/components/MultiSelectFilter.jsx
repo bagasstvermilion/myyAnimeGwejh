@@ -6,6 +6,7 @@ export default function MultiSelectFilter({
   options,
   selected,
   onChange,
+  panelAlign = "right",
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
@@ -26,6 +27,33 @@ export default function MultiSelectFilter({
     } else {
       onChange([...selected, value]);
     }
+  }
+
+  function renderOptions() {
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((opt) => {
+          const value = opt.value ?? opt;
+          const text = opt.label ?? opt;
+          const active = selected.includes(value);
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => toggle(value)}
+              style={active ? gradientBorderStyle("#f6effc") : undefined}
+              className={`cursor-pointer whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                active
+                  ? "text-zinc-900"
+                  : "text-zinc-700 ring-1 ring-zinc-200 hover:ring-violet-300"
+              }`}
+            >
+              {text}
+            </button>
+          );
+        })}
+      </div>
+    );
   }
 
   return (
@@ -74,29 +102,45 @@ export default function MultiSelectFilter({
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-72 rounded-2xl bg-white p-3 shadow-lg ring-1 ring-zinc-100">
-          <div className="grid grid-cols-2 gap-1.5">
-            {options.map((opt) => {
-              const value = opt.value ?? opt;
-              const text = opt.label ?? opt;
-              const active = selected.includes(value);
-              return (
+        <>
+          {/* mobile: centered modal instead of an anchored dropdown — a
+              panel wide enough to lay options out horizontally can't be
+              reliably anchored under either button without spilling past
+              a screen edge, so it just centers on the viewport instead */}
+          <div
+            className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 p-4 sm:hidden"
+            onClick={() => setOpen(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl ring-1 ring-zinc-100"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-zinc-900">
+                  {label}
+                </span>
                 <button
-                  key={value}
                   type="button"
-                  onClick={() => toggle(value)}
-                  className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                    active
-                      ? "bg-gradient-to-br from-pink-400 to-violet-600 text-white"
-                      : "text-zinc-700 ring-1 ring-zinc-200 hover:ring-violet-300"
-                  }`}
+                  onClick={() => setOpen(false)}
+                  aria-label="Tutup"
+                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100"
                 >
-                  {text}
+                  ✕
                 </button>
-              );
-            })}
+              </div>
+              {renderOptions()}
+            </div>
           </div>
-        </div>
+
+          {/* sm+: original anchored dropdown */}
+          <div
+            className={`absolute z-20 mt-2 hidden w-72 rounded-2xl bg-white p-3 shadow-lg ring-1 ring-zinc-100 sm:block ${
+              panelAlign === "left" ? "left-0" : "right-0"
+            }`}
+          >
+            {renderOptions()}
+          </div>
+        </>
       )}
     </div>
   );

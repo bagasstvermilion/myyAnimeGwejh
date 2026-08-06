@@ -34,19 +34,22 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Google OAuth failures (banned accounts included) come back as error
-  // params in the URL hash after the Google -> Supabase -> app redirect,
-  // rather than as a normal rejected promise like email/password login —
-  // this can land on any page (whatever `redirectTo` was), so it has to be
-  // checked globally instead of just on the Login page
+  // Google OAuth failures (banned accounts included) come back as
+  // ?error=...&error_code=...&error_description=... query params after the
+  // Google -> Supabase -> app redirect, rather than as a normal rejected
+  // promise like email/password login — this can land on any page
+  // (whatever `redirectTo` was), so it has to be checked globally instead
+  // of just on the Login page. Supabase doesn't include which email/user
+  // was rejected, so we can't fetch the real ban duration/reason here —
+  // just a generic notice.
   useEffect(() => {
-    const hash = window.location.hash
-    if (!hash.includes('error')) return
-
-    const params = new URLSearchParams(hash.slice(1))
+    const params = new URLSearchParams(window.location.search)
+    const errorCode = params.get('error_code')
     const description = (params.get('error_description') || '').replace(/\+/g, ' ')
 
-    if (description.toLowerCase().includes('banned')) {
+    if (!errorCode && !description) return
+
+    if (errorCode === 'user_banned' || description.toLowerCase().includes('banned')) {
       setBannedNotice({})
     }
 

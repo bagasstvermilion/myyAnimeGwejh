@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -73,6 +74,19 @@ export default function Browse() {
         ? searchAnime(search, page, filters)
         : activeTab.fetcher(page, filters),
   });
+
+  // remembers the results area's last rendered height so it can hold that
+  // height while the next filter/page loads — the grid still collapses to
+  // the spinner like before, but the page itself no longer gets shorter
+  // mid-load, which is what was yanking the scroll position around
+  const resultsRef = useRef(null);
+  const [minResultsHeight, setMinResultsHeight] = useState(0);
+
+  useEffect(() => {
+    if (!isLoading && resultsRef.current) {
+      setMinResultsHeight(resultsRef.current.offsetHeight);
+    }
+  }, [data, isLoading]);
 
   function updateParams(overrides) {
     const next = {
@@ -188,36 +202,38 @@ export default function Browse() {
         {heading}
       </h2>
 
-      {isLoading && <Spinner />}
-      {isError && (
-        <div className="flex flex-col items-start gap-2">
-          <p className="text-red-500">Gagal memuat data server.</p>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="rounded-full border border-zinc-200 bg-white px-4 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-300"
-          >
-            Coba lagi
-          </button>
-        </div>
-      )}
+      <div ref={resultsRef} style={{ minHeight: minResultsHeight }}>
+        {isLoading && <Spinner />}
+        {isError && (
+          <div className="flex flex-col items-start gap-2">
+            <p className="text-red-500">Gagal memuat data server.</p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="rounded-full border border-zinc-200 bg-white px-4 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-300"
+            >
+              Coba lagi
+            </button>
+          </div>
+        )}
 
-      <AnimeGrid
-        animeList={data?.data}
-        showRank={!search && tab === "top"}
-        rankOffset={(page - 1) * 24}
-      />
+        <AnimeGrid
+          animeList={data?.data}
+          showRank={!search && tab === "top"}
+          rankOffset={(page - 1) * 24}
+        />
 
-      {!isLoading && !isError && data?.data?.length > 0 && (
-        <div className="mt-10 flex justify-center">
-          <Pagination
-            page={page}
-            lastPage={data?.pageInfo?.lastPage}
-            hasNextPage={data?.pageInfo?.hasNextPage}
-            onChange={goToPage}
-          />
-        </div>
-      )}
+        {!isLoading && !isError && data?.data?.length > 0 && (
+          <div className="mt-10 flex justify-center">
+            <Pagination
+              page={page}
+              lastPage={data?.pageInfo?.lastPage}
+              hasNextPage={data?.pageInfo?.hasNextPage}
+              onChange={goToPage}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
