@@ -21,7 +21,7 @@ export default function SearchBar({ onSearch, defaultValue = "" }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Cari anime..."
-          className="w-full rounded-full border border-zinc-200 bg-white px-4 py-3 pr-12 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100 sm:px-5 sm:py-3 sm:text-base"
+          className="w-full rounded-full border border-zinc-200 bg-white px-4 py-3 pr-12 text-base text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100 sm:px-5 sm:py-3"
         />
         {query && (
           <button
