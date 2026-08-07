@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-export default function AnimeCard({ anime, rank }) {
+export default function AnimeCard({ anime, rank, rankIcon }) {
   const title = anime.title_english || anime.title
   const image = anime.images?.webp?.image_url || anime.images?.jpg?.image_url
 
@@ -37,7 +37,7 @@ export default function AnimeCard({ anime, rank }) {
 
       {rank && (
         <span className="pointer-events-none absolute right-2 top-2 z-10 rounded-full bg-black/70 px-2 py-0.5 text-xs font-semibold text-white">
-          #{rank}
+          #{rank} {rankIcon}
         </span>
       )}
     </div>

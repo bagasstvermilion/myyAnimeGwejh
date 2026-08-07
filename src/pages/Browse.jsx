@@ -38,6 +38,15 @@ const TABS = [
   },
 ];
 
+const TOP_SORTS = [
+  { value: "score", label: "Rating Tertinggi", anilistSort: "SCORE_DESC" },
+  {
+    value: "popularity",
+    label: "Paling Populer",
+    anilistSort: "POPULARITY_DESC",
+  },
+];
+
 function tabStyle(active) {
   return gradientBorderStyle(active ? "#f6effc" : "#fafafa");
 }
@@ -58,6 +67,10 @@ export default function Browse() {
   const page = Number(searchParams.get("page")) || 1;
   const genre = parseList(searchParams.get("genre"));
   const format = parseList(searchParams.get("format"));
+  const rawTopSort = searchParams.get("sort");
+  const topSort = TOP_SORTS.some((s) => s.value === rawTopSort)
+    ? rawTopSort
+    : "score";
 
   const activeTab = TABS.find((t) => t.key === tab);
   const filters = {
@@ -68,11 +81,18 @@ export default function Browse() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: search
       ? ["search", search, page, genre, format]
-      : [activeTab.queryName, page, genre, format],
+      : tab === "top"
+        ? [activeTab.queryName, page, genre, format, topSort]
+        : [activeTab.queryName, page, genre, format],
     queryFn: () =>
       search
         ? searchAnime(search, page, filters)
-        : activeTab.fetcher(page, filters),
+        : tab === "top"
+          ? getTopAnime(page, {
+              ...filters,
+              sort: TOP_SORTS.find((s) => s.value === topSort).anilistSort,
+            })
+          : activeTab.fetcher(page, filters),
   });
 
   // remembers the results area's last rendered height so it can hold that
@@ -88,18 +108,33 @@ export default function Browse() {
     }
   }, [data, isLoading]);
 
+  const [topSortOpen, setTopSortOpen] = useState(false);
+  const topSortRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (topSortRef.current && !topSortRef.current.contains(e.target)) {
+        setTopSortOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   function updateParams(overrides) {
     const next = {
       tab: overrides.tab ?? tab,
       search: overrides.search ?? search,
       genre: overrides.genre ?? genre,
       format: overrides.format ?? format,
+      sort: overrides.sort ?? topSort,
       page: String(overrides.page ?? 1),
     };
     const params = { tab: next.tab, page: next.page };
     if (next.search) params.search = next.search;
     if (next.genre.length) params.genre = next.genre.join(",");
     if (next.format.length) params.format = next.format.join(",");
+    if (next.tab === "top" && next.sort !== "score") params.sort = next.sort;
     setSearchParams(params);
   }
 
@@ -109,6 +144,11 @@ export default function Browse() {
 
   function selectTab(key) {
     updateParams({ tab: key, search: "", page: 1 });
+  }
+
+  function selectTopSort(value) {
+    updateParams({ tab: "top", search: "", page: 1, sort: value });
+    setTopSortOpen(false);
   }
 
   function selectGenre(values) {
@@ -152,17 +192,125 @@ export default function Browse() {
 
       <div className="mb-4 flex flex-col gap-3 sm:mb-10 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex flex-nowrap items-center gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => selectTab(t.key)}
-              style={tabStyle(!search && tab === t.key)}
-              className="shrink-0 cursor-pointer rounded-full px-3 py-2 text-xs font-medium text-zinc-900 transition hover:opacity-80 sm:px-4 sm:py-1.5 sm:text-sm"
-            >
-              {t.label}
-            </button>
-          ))}
+          {TABS.map((t) =>
+            t.key === "top" ? (
+              <div key={t.key} ref={topSortRef} className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setTopSortOpen((o) => !o)}
+                  style={tabStyle(!search && tab === "top")}
+                  className="flex cursor-pointer items-center gap-1 rounded-full px-3 py-2 text-xs font-medium text-zinc-900 transition hover:opacity-80 sm:px-4 sm:py-1.5 sm:text-sm"
+                >
+                  {t.label}
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className={`h-3.5 w-3.5 transition-transform ${topSortOpen ? "rotate-180" : ""}`}
+                    aria-hidden
+                  >
+                    <defs>
+                      <linearGradient
+                        id="top-sort-chevron"
+                        x1="0"
+                        y1="0"
+                        x2="24"
+                        y2="24"
+                      >
+                        <stop offset="0" stopColor="#f472b6" />
+                        <stop offset="1" stopColor="#7c3aed" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M6 9l6 6 6-6"
+                      stroke="url(#top-sort-chevron)"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                {topSortOpen && (
+                  <>
+                    {/* mobile: centered modal — the tab row scrolls
+                        horizontally (overflow-x-auto), which forces
+                        overflow-y to clip too, so an anchored dropdown
+                        gets cut off/squeezed there instead of floating
+                        below the button */}
+                    <div
+                      className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 p-4 sm:hidden"
+                      onClick={() => setTopSortOpen(false)}
+                    >
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full max-w-xs rounded-2xl bg-white p-4 shadow-xl ring-1 ring-zinc-100"
+                      >
+                        <div className="mb-3 flex items-center justify-between">
+                          <span className="text-sm font-semibold text-zinc-900">
+                            {t.label}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setTopSortOpen(false)}
+                            aria-label="Tutup"
+                            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {TOP_SORTS.map((opt) => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => selectTopSort(opt.value)}
+                              className={`rounded-xl px-3 py-2 text-left text-sm transition ${
+                                !search &&
+                                tab === "top" &&
+                                topSort === opt.value
+                                  ? "bg-[#f6effc] font-medium text-zinc-900"
+                                  : "text-zinc-600 hover:bg-zinc-50"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* sm+: anchored dropdown */}
+                    <div className="absolute z-20 mt-2 hidden w-44 rounded-2xl bg-white p-1.5 shadow-lg ring-1 ring-zinc-100 sm:block">
+                      {TOP_SORTS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => selectTopSort(opt.value)}
+                          className={`block w-full cursor-pointer rounded-xl px-3 py-2 text-left text-sm transition ${
+                            !search && tab === "top" && topSort === opt.value
+                              ? "bg-[#f6effc] font-medium text-zinc-900"
+                              : "text-zinc-600 hover:bg-zinc-50"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => selectTab(t.key)}
+                style={tabStyle(!search && tab === t.key)}
+                className="shrink-0 cursor-pointer rounded-full px-3 py-2 text-xs font-medium text-zinc-900 transition hover:opacity-80 sm:px-4 sm:py-1.5 sm:text-sm"
+              >
+                {t.label}
+              </button>
+            ),
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -221,6 +369,7 @@ export default function Browse() {
           animeList={data?.data}
           showRank={!search && tab === "top"}
           rankOffset={(page - 1) * 24}
+          rankIcon={topSort === "score" ? "⭐" : "❤️"}
         />
 
         {!isLoading && !isError && data?.data?.length > 0 && (
