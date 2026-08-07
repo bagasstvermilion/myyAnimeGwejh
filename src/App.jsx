@@ -8,6 +8,7 @@ import Browse from './pages/Browse'
 import AnimeDetail from './pages/AnimeDetail'
 import MyList from './pages/MyList'
 import Login from './pages/Login'
+import Privacy from './pages/Privacy'
 import AdminDashboard from './pages/AdminDashboard'
 import Overview from './pages/admin/Overview'
 import GrantAccess from './pages/admin/GrantAccess'
@@ -25,6 +26,7 @@ function App() {
           <Route path="/anime/:id" element={<AnimeDetail />} />
           <Route path="/my-list" element={<MyList />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/admin" element={<AdminDashboard />}>
             <Route index element={<Navigate to="overview" replace />} />
             <Route path="overview" element={<Overview />} />
