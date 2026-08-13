@@ -40,13 +40,27 @@ async function translateChunk(text, target) {
 export async function translateText(text, target = 'id') {
   if (!text) return ''
 
-  const chunks = splitIntoChunks(text)
-  const translated = []
-  for (const chunk of chunks) {
-    // sequential, not Promise.all — MyMemory's anonymous tier is easy to
-    // rate-limit if hit with several requests at once
-    translated.push(await translateChunk(chunk, target))
+  // translate paragraph-by-paragraph and rejoin on blank lines, so
+  // multi-paragraph text (bios, synopses) doesn't collapse into one wall
+  // of text — sentence-chunking within each paragraph still happens for
+  // MyMemory's per-request character cap
+  const paragraphs = text.split(/\n\s*\n/)
+  const translatedParagraphs = []
+
+  for (const paragraph of paragraphs) {
+    if (!paragraph.trim()) {
+      translatedParagraphs.push('')
+      continue
+    }
+    const chunks = splitIntoChunks(paragraph)
+    const translated = []
+    for (const chunk of chunks) {
+      // sequential, not Promise.all — MyMemory's anonymous tier is easy to
+      // rate-limit if hit with several requests at once
+      translated.push(await translateChunk(chunk, target))
+    }
+    translatedParagraphs.push(translated.join(' '))
   }
 
-  return translated.join(' ')
+  return translatedParagraphs.join('\n\n')
 }

@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import {
+  useParams,
+  useNavigate,
+  useSearchParams,
+  useNavigationType,
+} from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getAnimeById } from "../lib/anilist";
 import { gradientBorderStyle } from "../lib/gradientBorder";
@@ -35,6 +40,12 @@ function StatCard({ label, value }) {
 export default function AnimeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const navigationType = useNavigationType();
+  // tab lives in the URL (not local state) so it survives navigating to a
+  // character's detail page and back — otherwise the browser-back restores
+  // this page fresh and silently resets the tab to "deskripsi"
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") === "character" ? "character" : "deskripsi";
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["anime", id],
@@ -46,7 +57,6 @@ export default function AnimeDetail() {
   const [translateError, setTranslateError] = useState(false);
   const [coverPreviewOpen, setCoverPreviewOpen] = useState(false);
   const [heroReady, setHeroReady] = useState(false);
-  const [tab, setTab] = useState("deskripsi");
   const [characterLimit, setCharacterLimit] = useState(
     window.innerWidth < 640 ? 18 : 24,
   );
@@ -60,11 +70,28 @@ export default function AnimeDetail() {
     anime?.synopsis ? anime.synopsis.slice(0, 160) : undefined,
   );
 
-  // reset the translation state whenever the user opens a different anime
+  // reset the translation state whenever the user opens a different anime,
+  // and scroll to top — React Router doesn't do this on navigation, so
+  // without it the page opens wherever the previous page was scrolled to.
+  // skipped on POP (browser back/forward); see the heroReady effect below,
+  // which restores the saved scroll position instead once there's actually
+  // enough content rendered to scroll to
   useEffect(() => {
     setTranslated(null);
     setTranslateError(false);
+    if (navigationType !== "POP") window.scrollTo(0, 0);
   }, [id]);
+
+  // runs once the full page (not just the loading spinner) is actually
+  // rendered — restoring scroll any earlier has nothing tall enough to
+  // scroll to yet, so the position wouldn't stick
+  useEffect(() => {
+    if (navigationType !== "POP" || !heroReady) return;
+    const saved = sessionStorage.getItem(`animeScroll:${id}`);
+    if (saved == null) return;
+    window.scrollTo(0, Number(saved));
+    sessionStorage.removeItem(`animeScroll:${id}`);
+  }, [id, heroReady]);
 
   // 18 characters on mobile, 24 from sm (640px) up
   useEffect(() => {
@@ -155,7 +182,13 @@ export default function AnimeDetail() {
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
             <defs>
-              <linearGradient id="back-chevron-gradient" x1="0" y1="0" x2="24" y2="24">
+              <linearGradient
+                id="back-chevron-gradient"
+                x1="0"
+                y1="0"
+                x2="24"
+                y2="24"
+              >
                 <stop offset="0" stopColor="#f472b6" />
                 <stop offset="1" stopColor="#7c3aed" />
               </linearGradient>
@@ -218,8 +251,10 @@ export default function AnimeDetail() {
               <h1 className="font-display text-lg font-semibold text-zinc-900">
                 {anime.title_english || anime.title}
               </h1>
-              <p className="mt-0.5 text-xs text-zinc-400">{anime.title_japanese}</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <p className="mt-2 text-xs text-zinc-400">
+                {anime.title_japanese}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {anime.genres?.map((g) => (
                   <span
                     key={g.mal_id}
@@ -265,7 +300,9 @@ export default function AnimeDetail() {
                 <h1 className="font-display text-4xl font-semibold text-white">
                   {anime.title_english || anime.title}
                 </h1>
-                <p className="mt-1 text-sm text-white/50">{anime.title_japanese}</p>
+                <p className="mt-1 text-sm text-white/50">
+                  {anime.title_japanese}
+                </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {anime.genres?.map((g) => (
                     <span
@@ -312,7 +349,9 @@ export default function AnimeDetail() {
               <h1 className="font-display text-2xl font-semibold text-white sm:text-4xl">
                 {anime.title_english || anime.title}
               </h1>
-              <p className="mt-1 text-sm text-white/50">{anime.title_japanese}</p>
+              <p className="mt-1 text-sm text-white/50">
+                {anime.title_japanese}
+              </p>
 
               <div className="mt-4 flex flex-wrap gap-2">
                 {anime.genres?.map((g) => (
@@ -348,7 +387,11 @@ export default function AnimeDetail() {
           <button
             key={t.key}
             type="button"
-            onClick={() => setTab(t.key)}
+            onClick={() =>
+              setSearchParams(t.key === "deskripsi" ? {} : { tab: t.key }, {
+                replace: true,
+              })
+            }
             style={tabStyle(tab === t.key)}
             className="cursor-pointer rounded-full px-3.5 py-1.5 text-sm font-medium text-zinc-900 transition hover:opacity-80 sm:px-4 sm:py-1.5 sm:text-sm"
           >
@@ -362,7 +405,21 @@ export default function AnimeDetail() {
           {anime.characters?.length ? (
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
               {anime.characters.slice(0, characterLimit).map((c) => (
-                <div key={c.id} className="flex flex-col items-center gap-1.5 text-center">
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    // the character page forces its own scroll-to-top on
+                    // open, which wipes out where we were scrolled to here
+                    // — save it now so it can be restored on the way back
+                    sessionStorage.setItem(
+                      `animeScroll:${id}`,
+                      String(window.scrollY),
+                    );
+                    navigate(`/character/${c.id}`);
+                  }}
+                  className="flex cursor-pointer flex-col items-center gap-1.5 text-center transition hover:opacity-80"
+                >
                   <img
                     src={c.image}
                     alt={c.name}
@@ -370,9 +427,13 @@ export default function AnimeDetail() {
                     draggable={false}
                     className="aspect-[2/3] w-full rounded-xl object-cover ring-1 ring-zinc-100"
                   />
-                  <p className="line-clamp-2 text-xs font-medium text-zinc-900">{c.name}</p>
-                  <p className="text-[10px] uppercase tracking-wide text-zinc-400">{c.role}</p>
-                </div>
+                  <p className="line-clamp-2 text-xs font-medium text-zinc-900">
+                    {c.name}
+                  </p>
+                  <p className="text-[10px] uppercase tracking-wide text-zinc-400">
+                    {c.role}
+                  </p>
+                </button>
               ))}
             </div>
           ) : (
@@ -385,76 +446,80 @@ export default function AnimeDetail() {
 
       {/* synopsis + metadata */}
       {tab === "deskripsi" && (
-      <div className="mt-10 grid gap-10 px-2 sm:px-0 sm:pl-4 lg:grid-cols-[1fr_260px]">
-        <div>
-          <div className="flex max-w-2xl items-center justify-between gap-3">
-            <h2 className="font-display text-base font-semibold text-zinc-900 sm:text-lg">
-              Sinopsis
-            </h2>
-            {anime.synopsis && (
-              <button
-                type="button"
-                onClick={handleTranslate}
-                disabled={isTranslating}
-                aria-label={translated ? "Lihat teks asli" : "Terjemahkan sinopsis"}
-                className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-full transition hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50 ${
-                  translated ? "bg-violet-50" : ""
-                }`}
-              >
-                {isTranslating ? (
-                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-200 border-t-violet-600" />
-                ) : (
-                  <span
-                    aria-hidden
-                    className="inline-block h-7 w-7 bg-gradient-to-br from-pink-400 to-violet-600"
-                    style={{
-                      WebkitMaskImage: `url(${translateIcon})`,
-                      maskImage: `url(${translateIcon})`,
-                      WebkitMaskSize: "contain",
-                      maskSize: "contain",
-                      WebkitMaskRepeat: "no-repeat",
-                      maskRepeat: "no-repeat",
-                      WebkitMaskPosition: "center",
-                      maskPosition: "center",
-                    }}
-                  />
-                )}
-              </button>
+        <div className="mt-10 grid gap-10 px-2 sm:px-0 sm:pl-4 lg:grid-cols-[1fr_260px]">
+          <div>
+            <div className="flex max-w-2xl items-center justify-between gap-3">
+              <h2 className="font-display text-base font-semibold text-zinc-900 sm:text-lg">
+                Sinopsis
+              </h2>
+              {anime.synopsis && (
+                <button
+                  type="button"
+                  onClick={handleTranslate}
+                  disabled={isTranslating}
+                  aria-label={
+                    translated ? "Lihat teks asli" : "Terjemahkan sinopsis"
+                  }
+                  className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-full transition hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50 ${
+                    translated ? "bg-violet-50" : ""
+                  }`}
+                >
+                  {isTranslating ? (
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-200 border-t-violet-600" />
+                  ) : (
+                    <span
+                      aria-hidden
+                      className="inline-block h-7 w-7 bg-gradient-to-br from-pink-400 to-violet-600"
+                      style={{
+                        WebkitMaskImage: `url(${translateIcon})`,
+                        maskImage: `url(${translateIcon})`,
+                        WebkitMaskSize: "contain",
+                        maskSize: "contain",
+                        WebkitMaskRepeat: "no-repeat",
+                        maskRepeat: "no-repeat",
+                        WebkitMaskPosition: "center",
+                        maskPosition: "center",
+                      }}
+                    />
+                  )}
+                </button>
+              )}
+            </div>
+            <p className="mt-3 max-w-2xl text-xs leading-relaxed text-zinc-600 sm:text-sm">
+              {translated || anime.synopsis || "Belum ada sinopsis."}
+            </p>
+            {translateError && (
+              <p className="mt-2 text-xs text-red-500">
+                Gagal menerjemahkan, coba lagi.
+              </p>
             )}
           </div>
-          <p className="mt-3 max-w-2xl text-xs leading-relaxed text-zinc-600 sm:text-sm">
-            {translated || anime.synopsis || "Belum ada sinopsis."}
-          </p>
-          {translateError && (
-            <p className="mt-2 text-xs text-red-500">
-              Gagal menerjemahkan, coba lagi.
-            </p>
-          )}
-        </div>
 
-        <aside className="space-y-4 text-xs sm:text-sm">
-          {studios && (
-            <div>
-              <p className="text-zinc-400">Studio</p>
-              <p className="mt-0.5 font-medium text-zinc-900">{studios}</p>
-            </div>
-          )}
-          {anime.source && (
-            <div>
-              <p className="text-zinc-400">Sumber</p>
-              <p className="mt-0.5 font-medium text-zinc-900">{anime.source}</p>
-            </div>
-          )}
-          {anime.aired?.string && (
-            <div>
-              <p className="text-zinc-400">Tayang</p>
-              <p className="mt-0.5 font-medium text-zinc-900">
-                {anime.aired.string}
-              </p>
-            </div>
-          )}
-        </aside>
-      </div>
+          <aside className="space-y-4 text-xs sm:text-sm">
+            {studios && (
+              <div>
+                <p className="text-zinc-400">Studio</p>
+                <p className="mt-0.5 font-medium text-zinc-900">{studios}</p>
+              </div>
+            )}
+            {anime.source && (
+              <div>
+                <p className="text-zinc-400">Sumber</p>
+                <p className="mt-0.5 font-medium text-zinc-900">
+                  {anime.source}
+                </p>
+              </div>
+            )}
+            {anime.aired?.string && (
+              <div>
+                <p className="text-zinc-400">Tayang</p>
+                <p className="mt-0.5 font-medium text-zinc-900">
+                  {anime.aired.string}
+                </p>
+              </div>
+            )}
+          </aside>
+        </div>
       )}
 
       <PhotoLightbox

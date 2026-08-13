@@ -122,8 +122,18 @@ function normalize(media) {
       media.characters?.edges?.map((edge) => ({
         id: edge.node.id,
         name: edge.node.name?.full,
+        nativeName: edge.node.name?.native,
+        alternative: (edge.node.name?.alternative ?? []).filter(Boolean),
+        alternativeSpoiler: (edge.node.name?.alternativeSpoiler ?? []).filter(
+          Boolean,
+        ),
         image: edge.node.image?.large,
         role: edge.role,
+        description: edge.node.description,
+        gender: edge.node.gender,
+        age: edge.node.age,
+        dateOfBirth: edge.node.dateOfBirth,
+        favourites: edge.node.favourites,
       })) ?? [],
   }
 }
@@ -170,9 +180,9 @@ export async function searchAnime(query, page = 1, { genre, format } = {}) {
   return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 
-export async function getTopAnime(page = 1, { perPage = 24, genre, format, sort = 'SCORE_DESC' } = {}) {
+export async function getTopAnime(page = 1, { perPage = 24, genre, format } = {}) {
   const gql = `
-    query ($page: Int, $perPage: Int, $genre: [String], $format: [MediaFormat], $sort: [MediaSort]) {
+    query ($page: Int, $perPage: Int, $genre: [String], $format: [MediaFormat]) {
       Page(page: $page, perPage: $perPage) {
         pageInfo {
           currentPage
@@ -182,7 +192,7 @@ export async function getTopAnime(page = 1, { perPage = 24, genre, format, sort 
         media(
           type: ANIME
           isAdult: false
-          sort: $sort
+          sort: SCORE_DESC
           genre_in: $genre
           format_in: $format
         ) {
@@ -191,7 +201,7 @@ export async function getTopAnime(page = 1, { perPage = 24, genre, format, sort 
       }
     }
   `
-  const data = await anilistFetch(gql, { page, perPage, genre, format, sort: [sort] })
+  const data = await anilistFetch(gql, { page, perPage, genre, format })
   return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 
@@ -277,10 +287,22 @@ export async function getAnimeById(id) {
               id
               name {
                 full
+                native
+                alternative
+                alternativeSpoiler
               }
               image {
                 large
               }
+              description(asHtml: false)
+              gender
+              age
+              dateOfBirth {
+                year
+                month
+                day
+              }
+              favourites
             }
           }
         }
@@ -289,4 +311,47 @@ export async function getAnimeById(id) {
   `
   const data = await anilistFetch(gql, { id: Number(id) })
   return { data: normalize(data.Media) }
+}
+
+export async function getCharacterById(id) {
+  const gql = `
+    query ($id: Int) {
+      Character(id: $id) {
+        id
+        name {
+          full
+          native
+          alternative
+          alternativeSpoiler
+        }
+        image {
+          large
+        }
+        description(asHtml: false)
+        gender
+        age
+        dateOfBirth {
+          year
+          month
+          day
+        }
+        favourites
+      }
+    }
+  `
+  const data = await anilistFetch(gql, { id: Number(id) })
+  const c = data.Character
+  return {
+    id: c.id,
+    name: c.name?.full,
+    nativeName: c.name?.native,
+    alternative: (c.name?.alternative ?? []).filter(Boolean),
+    alternativeSpoiler: (c.name?.alternativeSpoiler ?? []).filter(Boolean),
+    image: c.image?.large,
+    description: c.description,
+    gender: c.gender,
+    age: c.age,
+    dateOfBirth: c.dateOfBirth,
+    favourites: c.favourites,
+  }
 }

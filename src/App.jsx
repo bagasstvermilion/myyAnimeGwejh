@@ -6,6 +6,7 @@ import AssistiveTouch from './components/AssistiveTouch'
 import Home from './pages/Home'
 import Browse from './pages/Browse'
 import AnimeDetail from './pages/AnimeDetail'
+import CharacterDetail from './pages/CharacterDetail'
 import MyList from './pages/MyList'
 import Login from './pages/Login'
 import Privacy from './pages/Privacy'
@@ -24,6 +25,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/browse" element={<Browse />} />
           <Route path="/anime/:id" element={<AnimeDetail />} />
+          <Route path="/character/:id" element={<CharacterDetail />} />
           <Route path="/my-list" element={<MyList />} />
           <Route path="/login" element={<Login />} />
           <Route path="/privacy" element={<Privacy />} />
