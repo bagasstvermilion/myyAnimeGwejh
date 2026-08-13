@@ -180,9 +180,9 @@ export async function searchAnime(query, page = 1, { genre, format } = {}) {
   return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 
-export async function getTopAnime(page = 1, { perPage = 24, genre, format } = {}) {
+export async function getTopAnime(page = 1, { perPage = 24, genre, format, sort = 'SCORE_DESC' } = {}) {
   const gql = `
-    query ($page: Int, $perPage: Int, $genre: [String], $format: [MediaFormat]) {
+    query ($page: Int, $perPage: Int, $genre: [String], $format: [MediaFormat], $sort: [MediaSort]) {
       Page(page: $page, perPage: $perPage) {
         pageInfo {
           currentPage
@@ -192,7 +192,7 @@ export async function getTopAnime(page = 1, { perPage = 24, genre, format } = {}
         media(
           type: ANIME
           isAdult: false
-          sort: SCORE_DESC
+          sort: $sort
           genre_in: $genre
           format_in: $format
         ) {
@@ -201,7 +201,7 @@ export async function getTopAnime(page = 1, { perPage = 24, genre, format } = {}
       }
     }
   `
-  const data = await anilistFetch(gql, { page, perPage, genre, format })
+  const data = await anilistFetch(gql, { page, perPage, genre, format, sort: [sort] })
   return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
 }
 
