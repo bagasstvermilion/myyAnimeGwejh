@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useParams,
   useNavigate,
@@ -6,7 +6,7 @@ import {
   useNavigationType,
 } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getAnimeById } from "../lib/anilist";
+import { getAnimeById, getAnimeCharactersPage } from "../lib/anilist";
 import { gradientBorderStyle } from "../lib/gradientBorder";
 import { useMetaTags } from "../lib/useMetaTags";
 import { translateText } from "../lib/translate";
@@ -23,6 +23,12 @@ const DETAIL_TABS = [
 function tabStyle(active) {
   return gradientBorderStyle(active ? "#f6effc" : "#fafafa");
 }
+
+// module-scope so it survives this component unmounting/remounting (e.g.
+// navigating to a character's detail page and back) — without it, every
+// round trip re-fetched the whole extra cast from scratch, which is what
+// was actually running the app into AniList's rate limit
+const extraCharactersCache = new Map();
 
 function StatCard({ label, value }) {
   return (
@@ -57,11 +63,136 @@ export default function AnimeDetail() {
   const [translateError, setTranslateError] = useState(false);
   const [coverPreviewOpen, setCoverPreviewOpen] = useState(false);
   const [heroReady, setHeroReady] = useState(false);
+  // restore the character search when coming back from a character's
+  // detail page (browser back), same as the scroll position below —
+  // otherwise reopening this page fresh clears whatever was searched.
+  // characterSearchInput is just the text box; characterSearch is the
+  // submitted query that actually triggers filtering/fetching (search only
+  // runs once the "Cari" button/Enter is pressed, not on every keystroke)
+  const [characterSearchInput, setCharacterSearchInput] = useState(() => {
+    if (navigationType !== "POP") return "";
+    return sessionStorage.getItem(`animeCharSearch:${id}`) || "";
+  });
+  const [characterSearch, setCharacterSearch] = useState(() => {
+    if (navigationType !== "POP") return "";
+    const saved = sessionStorage.getItem(`animeCharSearch:${id}`);
+    sessionStorage.removeItem(`animeCharSearch:${id}`);
+    return saved || "";
+  });
   const [characterLimit, setCharacterLimit] = useState(
     window.innerWidth < 640 ? 18 : 24,
   );
+  const [extraCharacters, setExtraCharacters] = useState([]);
+  const [loadingMoreCharacters, setLoadingMoreCharacters] = useState(false);
+  const fetchedExtraCharactersFor = useRef(null);
 
   const anime = data?.data;
+
+  // the detail query only ships the first 25 cast members. Only bother
+  // pulling the rest once the user actually searches (not just on opening
+  // the tab) — most visitors never search, and AniList's rate limit is
+  // tight enough that prefetching for everyone risks 429s across the app.
+  // Requests go out in small concurrent batches rather than one page at a
+  // time (much faster than fully sequential) or all-at-once (too bursty
+  // for the rate limit), and each batch is appended as it lands so matches
+  // show up progressively instead of all at once at the end.
+  //
+  // Depends on hasSearchQuery (a boolean), NOT characterSearch itself —
+  // depending on the raw string re-runs this effect on every keystroke,
+  // which tears down (cancels) the in-progress fetch each time before it
+  // can finish, permanently stuck on "Memuat karakter lainnya...".
+  const hasSearchQuery = characterSearch.trim().length > 0;
+  useEffect(() => {
+    if (tab !== "character" || !anime?.charactersHasMore || !hasSearchQuery) {
+      return;
+    }
+
+    // One Piece alone spans 20 pages (500 characters) — cap well above
+    // that so search actually covers the whole cast for every real anime;
+    // this only fires once per anime, on an actual search, not on every
+    // page load, so the extra requests are rare in practice
+    const MAX_EXTRA_PAGES = 30;
+    const BATCH_SIZE = 4;
+    const lastPage = Math.min(
+      anime.charactersLastPage || MAX_EXTRA_PAGES + 1,
+      MAX_EXTRA_PAGES + 1,
+    );
+    const allPages = [];
+    for (let p = 2; p <= lastPage; p++) allPages.push(p);
+
+    // cache lives at module scope keyed by anime id, and is filled in
+    // page-by-page as each request lands (not just when the whole run
+    // finishes) — that way, leaving mid-fetch (e.g. opening a character's
+    // detail page) doesn't throw away progress: coming back resumes from
+    // whatever pages already succeeded instead of starting over
+    let entry = extraCharactersCache.get(anime.mal_id);
+    if (!entry) {
+      entry = { charactersById: new Map(), fetchedPages: new Set() };
+      extraCharactersCache.set(anime.mal_id, entry);
+    }
+    setExtraCharacters(Array.from(entry.charactersById.values()));
+
+    const remainingPages = allPages.filter((p) => !entry.fetchedPages.has(p));
+    if (remainingPages.length === 0) {
+      setLoadingMoreCharacters(false);
+      return;
+    }
+
+    if (fetchedExtraCharactersFor.current === anime.mal_id) return;
+    fetchedExtraCharactersFor.current = anime.mal_id;
+
+    setLoadingMoreCharacters(true);
+
+    // deliberately not gated on "is this component still mounted": React
+    // 18+ safely no-ops a setState call on an unmounted component, and the
+    // shared cache entry above means the fetched pages are useful later
+    // regardless — so this is left to run to completion in the background
+    // even if the user navigates away (e.g. into a character's detail
+    // page) partway through, rather than abandoning the remaining pages.
+    // (An earlier version aborted on unmount via a `cancelled` flag, but
+    // StrictMode's dev-only mount→cleanup→remount cycle flips that flag
+    // within the same tick — long before any fetch() resolves — which
+    // permanently stopped every fetch after the first batch and left the
+    // loading indicator stuck forever.)
+    (async () => {
+      for (let i = 0; i < remainingPages.length; i += BATCH_SIZE) {
+        const batch = remainingPages.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map((page) =>
+            getAnimeCharactersPage(anime.mal_id, page)
+              .then((result) => {
+                entry.fetchedPages.add(page);
+                for (const c of result.characters) {
+                  entry.charactersById.set(c.id, c);
+                }
+                setExtraCharacters(Array.from(entry.charactersById.values()));
+              })
+              .catch(() => {
+                // most likely a 429 — leave this page's slot unmarked so
+                // it gets retried on a future search instead of being
+                // silently treated as covered
+              }),
+          ),
+        );
+        // small breather between batches so a big cast (multiple batches)
+        // doesn't fire everything within the same second and trip
+        // AniList's rate limit
+        if (i + BATCH_SIZE < remainingPages.length) {
+          await new Promise((resolve) => setTimeout(resolve, 400));
+        }
+      }
+      setLoadingMoreCharacters(false);
+      if (fetchedExtraCharactersFor.current === anime.mal_id) {
+        fetchedExtraCharactersFor.current = null;
+      }
+    })();
+  }, [
+    tab,
+    anime?.mal_id,
+    anime?.charactersHasMore,
+    anime?.charactersLastPage,
+    hasSearchQuery,
+  ]);
   const cover =
     anime?.images?.webp?.large_image_url || anime?.images?.webp?.image_url;
 
@@ -403,39 +534,125 @@ export default function AnimeDetail() {
       {tab === "character" && (
         <div className="mt-6 px-2 sm:px-0">
           {anime.characters?.length ? (
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-              {anime.characters.slice(0, characterLimit).map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => {
-                    // the character page forces its own scroll-to-top on
-                    // open, which wipes out where we were scrolled to here
-                    // — save it now so it can be restored on the way back
-                    sessionStorage.setItem(
-                      `animeScroll:${id}`,
-                      String(window.scrollY),
-                    );
-                    navigate(`/character/${c.id}`);
-                  }}
-                  className="flex cursor-pointer flex-col items-center gap-1.5 text-center transition hover:opacity-80"
-                >
-                  <img
-                    src={c.image}
-                    alt={c.name}
-                    loading="lazy"
-                    draggable={false}
-                    className="aspect-[2/3] w-full rounded-xl object-cover ring-1 ring-zinc-100"
+            <>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setCharacterSearch(characterSearchInput.trim());
+                }}
+                className="mb-5 flex max-w-md gap-2"
+              >
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={characterSearchInput}
+                    onChange={(e) => setCharacterSearchInput(e.target.value)}
+                    placeholder="Cari karakter..."
+                    className="w-full rounded-full border border-zinc-200 bg-white px-4 py-2 pr-9 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
                   />
-                  <p className="line-clamp-2 text-xs font-medium text-zinc-900">
-                    {c.name}
-                  </p>
-                  <p className="text-[10px] uppercase tracking-wide text-zinc-400">
-                    {c.role}
-                  </p>
+                  {characterSearchInput && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCharacterSearchInput("");
+                        setCharacterSearch("");
+                      }}
+                      aria-label="Hapus pencarian"
+                      className="absolute right-1.5 top-1/2 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition hover:opacity-70"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  className="cursor-pointer rounded-full bg-zinc-900 px-4 py-2 text-xs font-medium text-white transition hover:opacity-80 sm:text-sm"
+                >
+                  Cari
                 </button>
-              ))}
-            </div>
+              </form>
+
+              {(() => {
+                // once "Cari" is pressed, wait for the full-cast fetch to
+                // finish before showing anything — no more partial results
+                // flickering in while pages are still loading in the
+                // background
+                if (hasSearchQuery && anime.charactersHasMore && loadingMoreCharacters) {
+                  return <Spinner label="Mencari karakter..." />;
+                }
+
+                // AniList's character pagination isn't fully stable for
+                // casts this large (many minor characters tie on favourite
+                // count), so the same character can land on two different
+                // pages we fetch — dedupe by id so it never renders twice
+                const characterPool = Array.from(
+                  new Map(
+                    [...anime.characters, ...extraCharacters].map((c) => [
+                      c.id,
+                      c,
+                    ]),
+                  ).values(),
+                );
+                const filteredCharacters = hasSearchQuery
+                  ? characterPool.filter((c) =>
+                      c.name
+                        ?.toLowerCase()
+                        .includes(characterSearch.trim().toLowerCase()),
+                    )
+                  : anime.characters.slice(0, characterLimit);
+
+                if (!filteredCharacters.length) {
+                  return (
+                    <p className="py-10 text-center text-sm text-zinc-400">
+                      Gak ada karakter yang cocok dengan "{characterSearch}".
+                    </p>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+                    {filteredCharacters.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          // the character page forces its own scroll-to-top
+                          // on open, which wipes out where we were scrolled
+                          // to here — save it (and the search text) now so
+                          // both can be restored on the way back
+                          sessionStorage.setItem(
+                            `animeScroll:${id}`,
+                            String(window.scrollY),
+                          );
+                          if (characterSearch) {
+                            sessionStorage.setItem(
+                              `animeCharSearch:${id}`,
+                              characterSearch,
+                            );
+                          }
+                          navigate(`/character/${c.id}`);
+                        }}
+                        className="flex cursor-pointer flex-col items-center gap-1.5 text-center transition hover:opacity-80"
+                      >
+                        <img
+                          src={c.image}
+                          alt={c.name}
+                          loading="lazy"
+                          draggable={false}
+                          className="aspect-[2/3] w-full rounded-xl object-cover ring-1 ring-zinc-100"
+                        />
+                        <p className="line-clamp-2 text-xs font-medium text-zinc-900">
+                          {c.name}
+                        </p>
+                        <p className="text-[10px] uppercase tracking-wide text-zinc-400">
+                          {c.role}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
+            </>
           ) : (
             <p className="py-10 text-center text-sm text-zinc-400">
               Belum ada data karakter.

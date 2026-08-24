@@ -83,6 +83,45 @@ function stripHtml(html) {
   return html.replace(/<[^>]*>/g, '').trim()
 }
 
+function mapCharacterEdge(edge) {
+  return {
+    id: edge.node.id,
+    name: edge.node.name?.full,
+    nativeName: edge.node.name?.native,
+    alternative: (edge.node.name?.alternative ?? []).filter(Boolean),
+    alternativeSpoiler: (edge.node.name?.alternativeSpoiler ?? []).filter(Boolean),
+    image: edge.node.image?.large,
+    role: edge.role,
+    description: edge.node.description,
+    gender: edge.node.gender,
+    age: edge.node.age,
+    dateOfBirth: edge.node.dateOfBirth,
+    favourites: edge.node.favourites,
+  }
+}
+
+const CHARACTER_NODE_FIELDS = `
+  id
+  name {
+    full
+    native
+    alternative
+    alternativeSpoiler
+  }
+  image {
+    large
+  }
+  description(asHtml: false)
+  gender
+  age
+  dateOfBirth {
+    year
+    month
+    day
+  }
+  favourites
+`
+
 // reshape AniList's Media object into the same shape the rest of the app
 // already expects (mirrors what Jikan/MAL used to return), so components
 // like AnimeCard/AnimeDetail didn't need to change when we switched APIs
@@ -118,23 +157,9 @@ function normalize(media) {
         ? [media.startDate.day, media.startDate.month, media.startDate.year].filter(Boolean).join('/')
         : null,
     },
-    characters:
-      media.characters?.edges?.map((edge) => ({
-        id: edge.node.id,
-        name: edge.node.name?.full,
-        nativeName: edge.node.name?.native,
-        alternative: (edge.node.name?.alternative ?? []).filter(Boolean),
-        alternativeSpoiler: (edge.node.name?.alternativeSpoiler ?? []).filter(
-          Boolean,
-        ),
-        image: edge.node.image?.large,
-        role: edge.role,
-        description: edge.node.description,
-        gender: edge.node.gender,
-        age: edge.node.age,
-        dateOfBirth: edge.node.dateOfBirth,
-        favourites: edge.node.favourites,
-      })) ?? [],
+    characters: media.characters?.edges?.map(mapCharacterEdge) ?? [],
+    charactersHasMore: media.characters?.pageInfo?.hasNextPage ?? false,
+    charactersLastPage: media.characters?.pageInfo?.lastPage ?? 1,
   }
 }
 
@@ -280,29 +305,15 @@ export async function getAnimeById(id) {
     query ($id: Int) {
       Media(id: $id, type: ANIME) {
         ${MEDIA_FIELDS}
-        characters(sort: [ROLE, FAVOURITES_DESC], perPage: 24) {
+        characters(sort: [ROLE, FAVOURITES_DESC], perPage: 25) {
+          pageInfo {
+            hasNextPage
+            lastPage
+          }
           edges {
             role
             node {
-              id
-              name {
-                full
-                native
-                alternative
-                alternativeSpoiler
-              }
-              image {
-                large
-              }
-              description(asHtml: false)
-              gender
-              age
-              dateOfBirth {
-                year
-                month
-                day
-              }
-              favourites
+              ${CHARACTER_NODE_FIELDS}
             }
           }
         }
@@ -311,6 +322,35 @@ export async function getAnimeById(id) {
   `
   const data = await anilistFetch(gql, { id: Number(id) })
   return { data: normalize(data.Media) }
+}
+
+// the character tab only ships the anime's first 25 cast members up front
+// (AniList caps perPage at 25 regardless of what's requested) — this pulls
+// one additional page at a time so the search box can look beyond it
+export async function getAnimeCharactersPage(id, page) {
+  const gql = `
+    query ($id: Int, $page: Int) {
+      Media(id: $id, type: ANIME) {
+        characters(sort: [ROLE, FAVOURITES_DESC], page: $page, perPage: 25) {
+          pageInfo {
+            hasNextPage
+          }
+          edges {
+            role
+            node {
+              ${CHARACTER_NODE_FIELDS}
+            }
+          }
+        }
+      }
+    }
+  `
+  const data = await anilistFetch(gql, { id: Number(id), page })
+  const conn = data.Media.characters
+  return {
+    characters: conn.edges.map(mapCharacterEdge),
+    hasNextPage: conn.pageInfo.hasNextPage,
+  }
 }
 
 export async function getCharacterById(id) {
