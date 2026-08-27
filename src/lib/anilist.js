@@ -376,11 +376,35 @@ export async function getCharacterById(id) {
           day
         }
         favourites
+        media(sort: POPULARITY_DESC, page: 1, perPage: 5) {
+          edges {
+            voiceActors {
+              name {
+                full
+                native
+              }
+              languageV2
+            }
+            # AniList quirk: voiceActors silently resolves to null on this
+            # edge type unless a node field is also selected alongside it
+            node {
+              id
+            }
+          }
+        }
       }
     }
   `
   const data = await anilistFetch(gql, { id: Number(id) })
   const c = data.Character
+  // the voiceActors(language: JAPANESE) filter argument unreliably returns
+  // null instead of the actual list for some characters (an AniList API
+  // quirk) — so this fetches every language instead and picks the
+  // Japanese one here. Not every media credit has a VA listed at all
+  // (e.g. a movie cameo), so this also skips past those to the next one
+  const va = c.media?.edges
+    ?.flatMap((e) => e.voiceActors ?? [])
+    .find((actor) => actor.languageV2 === "Japanese")
   return {
     id: c.id,
     name: c.name?.full,
@@ -393,5 +417,6 @@ export async function getCharacterById(id) {
     age: c.age,
     dateOfBirth: c.dateOfBirth,
     favourites: c.favourites,
+    voiceActor: va ? { name: va.name?.full, nativeName: va.name?.native } : null,
   }
 }

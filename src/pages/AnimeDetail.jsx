@@ -548,7 +548,11 @@ export default function AnimeDetail() {
                     value={characterSearchInput}
                     onChange={(e) => setCharacterSearchInput(e.target.value)}
                     placeholder="Cari karakter..."
-                    className="w-full rounded-full border border-zinc-200 bg-white px-4 py-2 pr-9 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                    // iOS Safari auto-zooms the page on focus if an input's
+                    // font-size is under 16px — text-base (16px) on mobile
+                    // avoids that, text-sm from sm: up keeps it compact on
+                    // desktop where the zoom quirk doesn't apply
+                    className="w-full rounded-full border border-zinc-200 bg-white px-4 py-2 pr-9 text-base text-zinc-900 placeholder-zinc-400 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 sm:text-sm"
                   />
                   {characterSearchInput && (
                     <button

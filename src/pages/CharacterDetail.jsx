@@ -182,11 +182,20 @@ export default function CharacterDetail() {
               className="w-full"
             />
           </div>
-          {favourites && (
-            <span className="mb-1 flex shrink-0 items-center gap-1 rounded-full bg-pink-50 px-2.5 py-1 text-xs font-semibold text-pink-600">
-              ♥ {favourites}
-            </span>
-          )}
+          <div className="mb-4 flex shrink-0 flex-col items-end">
+            {character.voiceActor && (
+              <span className="mt-3 text-right text-xs text-zinc-400">
+                VA. {character.voiceActor.name}
+                {character.voiceActor.nativeName &&
+                  `/${character.voiceActor.nativeName}`}
+              </span>
+            )}
+            {favourites && (
+              <span className="mt-4 flex items-center gap-1 rounded-full bg-pink-50 px-2.5 py-1 text-xs font-semibold text-pink-600">
+                ♥ {favourites}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="px-4 pb-2 pt-4">
@@ -253,6 +262,13 @@ export default function CharacterDetail() {
             draggable={false}
             className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl brightness-[0.38]"
           />
+          {character.voiceActor && (
+            <span className="absolute right-12 top-12 text-sm text-white/50">
+              VA. {character.voiceActor.name}
+              {character.voiceActor.nativeName &&
+                `/${character.voiceActor.nativeName}`}
+            </span>
+          )}
           <img
             src={character.image}
             alt={character.name}

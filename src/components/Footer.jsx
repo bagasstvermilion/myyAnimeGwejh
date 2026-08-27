@@ -8,8 +8,7 @@ export default function Footer() {
           © 2026 MyAnimeGwe. All Rights Reserved.
         </span>
         <p className="mt-1 text-[10px] text-zinc-400 sm:text-[11px]">
-          Dibuat dengan <span className="text-fuchsia-500">♥</span> oleh Bagas —
-          credit to myy bini Lailaaa ❤️
+          Dibuat dengan <span className="text-fuchsia-500">♥</span> oleh Bagas
         </p>
 
         <Link
