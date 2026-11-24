@@ -168,7 +168,14 @@ export default function Browse() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  const heading = search ? `Hasil untuk "${search}"` : activeTab.label;
+  // set when the search had no exact hits and searchAnime() fell back to a
+  // typo-corrected query — the heading then suggests the corrected title
+  const suggestion = search ? data?.suggestion : undefined;
+  const heading = !search
+    ? activeTab.label
+    : suggestion?.type === "corrected"
+      ? `Mungkin maksud Anda "${suggestion.query}"`
+      : `Hasil untuk "${search}"`;
   const hasFilters = genre.length > 0 || format.length > 0;
 
   useMetaTags(
@@ -363,6 +370,14 @@ export default function Browse() {
               Coba lagi
             </button>
           </div>
+        )}
+
+        {!isLoading && !isError && data?.data?.length === 0 && (
+          <p className="text-sm text-zinc-500">
+            {search
+              ? `Anime "${search}" tidak ditemukan. Coba cek lagi ejaannya atau pakai judul lain.`
+              : "Tidak ada anime yang cocok dengan filter ini."}
+          </p>
         )}
 
         <AnimeGrid

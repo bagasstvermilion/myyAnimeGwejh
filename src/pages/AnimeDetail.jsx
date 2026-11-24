@@ -297,14 +297,8 @@ export default function AnimeDetail() {
   const studios = anime.studios?.map((s) => s.name).join(", ");
 
   return (
-    <div
-      className={`mx-auto max-w-[1440px] px-4 pb-16 sm:px-8 sm:pt-8 lg:px-14 ${
-        anime.banner ? "pt-0" : "pt-8"
-      }`}
-    >
-      <div
-        className={`mb-6 flex items-center justify-between gap-3 ${anime.banner ? "hidden sm:flex" : ""}`}
-      >
+    <div className="mx-auto max-w-[1440px] px-4 pb-16 pt-0 sm:px-8 sm:pt-8 lg:px-14">
+      <div className="mb-6 hidden items-center justify-between gap-3 sm:flex">
         <button
           type="button"
           onClick={() => navigate(-1)}
@@ -339,24 +333,29 @@ export default function AnimeDetail() {
       </div>
 
       {/* hero */}
-      {anime.banner ? (
-        <div>
-          {/* mobile: banner strip up top with the cover poster popping over
-              its bottom edge, title/meta below — like AniList's own layout.
-              -mx-4 bleeds it past the page's own side padding so it goes
-              edge-to-edge instead of sitting inside a white margin; no
-              rounding/clipping here since it runs flush to the screen edge. */}
-          <div className="-mx-4 sm:hidden">
-            <div className="relative aspect-[16/9] w-full">
-              <img
-                src={anime.banner}
-                alt=""
-                aria-hidden
-                draggable={false}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/75" />
-            </div>
+      <div>
+        {/* mobile: banner strip up top with the cover poster popping over
+            its bottom edge, title/meta below — like AniList's own layout.
+            -mx-4 bleeds it past the page's own side padding so it goes
+            edge-to-edge instead of sitting inside a white margin; no
+            rounding/clipping here since it runs flush to the screen edge.
+            Falls back to a blurred cover as the strip's backdrop when
+            there's no banner art yet (common for "Segera Tayang" titles
+            that haven't aired) — otherwise mobile silently dropped into
+            the desktop hero's reflowed layout instead of this native one. */}
+        <div className="-mx-4 sm:hidden">
+          <div className="relative aspect-[16/9] w-full overflow-hidden">
+            <img
+              src={anime.banner || cover}
+              alt=""
+              aria-hidden
+              draggable={false}
+              className={`absolute inset-0 h-full w-full object-cover ${
+                anime.banner ? "" : "scale-110 blur-xl brightness-75"
+              }`}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/75" />
+          </div>
             <div className="flex items-end justify-between gap-3 px-4">
               <button
                 type="button"
@@ -398,71 +397,28 @@ export default function AnimeDetail() {
             </div>
           </div>
 
-          {/* sm+: banner as a full-bleed overlay background behind the info row */}
-          <div className="relative hidden overflow-hidden rounded-3xl sm:block">
-            <img
-              src={anime.banner}
-              alt=""
-              aria-hidden
-              draggable={false}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
-            <div className="relative flex items-end gap-8 p-10">
-              <button
-                type="button"
-                onClick={() => setCoverPreviewOpen(true)}
-                aria-label="Lihat cover anime"
-                className="w-52 shrink-0 cursor-pointer"
-              >
-                <img
-                  src={cover}
-                  alt={anime.title}
-                  draggable={false}
-                  className="rounded-2xl shadow-2xl ring-1 ring-white/10 transition hover:opacity-80"
-                />
-              </button>
-              <div className="pb-1">
-                {anime.score && (
-                  <span className="mb-3 inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-sm font-medium text-amber-300 backdrop-blur-sm">
-                    ★ {anime.score}
-                  </span>
-                )}
-                <h1 className="font-display text-4xl font-semibold text-white">
-                  {anime.title_english || anime.title}
-                </h1>
-                <p className="mt-1 text-sm text-white/50">
-                  {anime.title_japanese}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {anime.genres?.map((g) => (
-                    <span
-                      key={g.mal_id}
-                      className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm"
-                    >
-                      {g.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="relative overflow-hidden rounded-3xl">
+        {/* sm+: banner as a full-bleed overlay background behind the info
+            row, or the same blurred-cover treatment as before when there's
+            no banner art */}
+        <div className="relative hidden overflow-hidden rounded-3xl sm:block">
           <img
-            src={cover}
+            src={anime.banner || cover}
             alt=""
             aria-hidden
             draggable={false}
-            className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl brightness-[0.45]"
+            className={`absolute inset-0 h-full w-full object-cover ${
+              anime.banner ? "" : "scale-110 blur-2xl brightness-[0.45]"
+            }`}
           />
-          <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-end sm:gap-8 sm:p-10">
+          {anime.banner && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
+          )}
+          <div className="relative flex items-end gap-8 p-10">
             <button
               type="button"
               onClick={() => setCoverPreviewOpen(true)}
               aria-label="Lihat cover anime"
-              className="w-40 shrink-0 cursor-pointer sm:w-52"
+              className="w-52 shrink-0 cursor-pointer"
             >
               <img
                 src={cover}
@@ -477,13 +433,12 @@ export default function AnimeDetail() {
                   ★ {anime.score}
                 </span>
               )}
-              <h1 className="font-display text-2xl font-semibold text-white sm:text-4xl">
+              <h1 className="font-display text-4xl font-semibold text-white">
                 {anime.title_english || anime.title}
               </h1>
               <p className="mt-1 text-sm text-white/50">
                 {anime.title_japanese}
               </p>
-
               <div className="mt-4 flex flex-wrap gap-2">
                 {anime.genres?.map((g) => (
                   <span
@@ -497,7 +452,7 @@ export default function AnimeDetail() {
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* stats */}
       <dl className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">

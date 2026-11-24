@@ -1,3 +1,5 @@
+import { findSimilarTitles, normalizeWords } from './fuzzySearch'
+
 const ENDPOINT = 'https://graphql.anilist.co'
 
 const MEDIA_FIELDS = `
@@ -179,7 +181,7 @@ async function anilistFetch(query, variables) {
   return json.data
 }
 
-export async function searchAnime(query, page = 1, { genre, format } = {}) {
+async function searchMedia(query, page, { genre, format }) {
   const gql = `
     query ($search: String, $page: Int, $genre: [String], $format: [MediaFormat]) {
       Page(page: $page, perPage: 24) {
@@ -203,6 +205,65 @@ export async function searchAnime(query, page = 1, { genre, format } = {}) {
   `
   const data = await anilistFetch(gql, { search: query, page, genre, format })
   return { data: data.Page.media.map(normalize), pageInfo: data.Page.pageInfo }
+}
+
+// fetches specific titles (still honouring the genre/format filters), kept in
+// the order the ids were given
+async function getAnimeByIds(ids, { genre, format }) {
+  const gql = `
+    query ($ids: [Int], $perPage: Int, $genre: [String], $format: [MediaFormat]) {
+      Page(page: 1, perPage: $perPage) {
+        media(
+          id_in: $ids
+          type: ANIME
+          isAdult: false
+          genre_in: $genre
+          format_in: $format
+        ) {
+          ${MEDIA_FIELDS}
+        }
+      }
+    }
+  `
+  const data = await anilistFetch(gql, { ids, perPage: ids.length, genre, format })
+  const order = new Map(ids.map((id, i) => [id, i]))
+  return data.Page.media
+    .sort((a, b) => order.get(a.id) - order.get(b.id))
+    .map(normalize)
+}
+
+// AniList only matches whole words, so a single typo returns nothing. When a
+// search comes back empty, this works out which title was probably meant
+// (see fuzzySearch.js) and searches for that instead. The result then also
+// carries `suggestion`:
+//   { type: 'corrected', query } — results are for the corrected `query`
+//   { type: 'similar' }          — results are the closest-matching titles
+export async function searchAnime(query, page = 1, filters = {}) {
+  const result = await searchMedia(query, page, filters)
+  if (result.data.length) return result
+
+  const similar = await findSimilarTitles(query).catch(() => null)
+  if (!similar) return result
+
+  const { correctedQuery, ids } = similar
+  if (normalizeWords(correctedQuery) !== normalizeWords(query)) {
+    const corrected = await searchMedia(correctedQuery, page, filters)
+    if (corrected.data.length) {
+      return { ...corrected, suggestion: { type: 'corrected', query: correctedQuery } }
+    }
+  }
+
+  // the closest titles don't paginate, so they only ever fill page 1
+  if (page > 1) return result
+
+  const data = await getAnimeByIds(ids, filters)
+  if (!data.length) return result
+
+  return {
+    data,
+    pageInfo: { currentPage: 1, lastPage: 1, hasNextPage: false },
+    suggestion: { type: 'similar' },
+  }
 }
 
 export async function getTopAnime(page = 1, { perPage = 24, genre, format, sort = 'SCORE_DESC' } = {}) {

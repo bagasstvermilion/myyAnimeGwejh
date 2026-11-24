@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "search-index": "node scripts/build-search-index.mjs",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"
   },
