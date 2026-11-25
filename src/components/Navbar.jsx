@@ -98,7 +98,15 @@ export default function Navbar() {
 
   useEffect(() => {
     const measure = () => {
-      if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight);
+      if (!headerRef.current) return;
+      const height = headerRef.current.offsetHeight;
+      setHeaderHeight(height);
+      // also exposed as a CSS variable so full-screen panels elsewhere (the
+      // OP/ED tab) can size themselves to exactly the space under the bar
+      document.documentElement.style.setProperty(
+        "--navbar-height",
+        `${height}px`,
+      );
     };
 
     measure();

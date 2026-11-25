@@ -14,16 +14,39 @@ import { translateText } from "../lib/translate";
 import translateIcon from "../assets/img/translate-icon.png";
 import Spinner from "../components/Spinner";
 import WatchlistButton from "../components/WatchlistButton";
+import AnimeThemes from "../components/AnimeThemes";
 import PhotoLightbox from "../components/dialog/PhotoLightbox";
 
 const DETAIL_TABS = [
   { key: "deskripsi", label: "Deskripsi" },
   { key: "character", label: "Character" },
+  { key: "lagu", label: "Soundtrack" },
 ];
 
 function tabStyle(active) {
   return gradientBorderStyle(active ? "#f6effc" : "#fafafa");
 }
+
+// icon-only buttons (translate, cinema mode) paint the icon as a mask over
+// the pink → violet gradient, so the icon itself takes the gradient fill
+function iconMaskStyle(src) {
+  return {
+    WebkitMaskImage: `url("${src}")`,
+    maskImage: `url("${src}")`,
+    WebkitMaskSize: "contain",
+    maskSize: "contain",
+    WebkitMaskRepeat: "no-repeat",
+    maskRepeat: "no-repeat",
+    WebkitMaskPosition: "center",
+    maskPosition: "center",
+  };
+}
+
+// screen-with-stand icon (rounded screen + bar underneath), as an SVG data
+// URL so it can be used as a mask
+const CINEMA_ICON = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="13" rx="3.5"/><path d="M8 20.5h8"/></svg>',
+)}`;
 
 // module-scope so it survives this component unmounting/remounting (e.g.
 // navigating to a character's detail page and back) — without it, every
@@ -52,7 +75,8 @@ export default function AnimeDetail() {
   // character's detail page and back — otherwise the browser-back restores
   // this page fresh and silently resets the tab to "deskripsi"
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get("tab") === "character" ? "character" : "deskripsi";
+  const rawTab = searchParams.get("tab");
+  const tab = DETAIL_TABS.some((t) => t.key === rawTab) ? rawTab : "deskripsi";
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["anime", id],
@@ -86,6 +110,9 @@ export default function AnimeDetail() {
   const [extraCharacters, setExtraCharacters] = useState([]);
   const [loadingMoreCharacters, setLoadingMoreCharacters] = useState(false);
   const fetchedExtraCharactersFor = useRef(null);
+  // the OP & ED tab's full-height panel — the "Sinema" button scrolls it up
+  // under the navbar so only the song list + player fill the screen
+  const themesPanelRef = useRef(null);
 
   const anime = data?.data;
 
@@ -468,23 +495,49 @@ export default function AnimeDetail() {
         <StatCard label="Tipe" value={anime.type} />
       </dl>
 
-      {/* deskripsi / character tabs */}
-      <div className="mt-8 flex flex-wrap items-center gap-2 px-2 sm:px-0">
-        {DETAIL_TABS.map((t) => (
+      {/* deskripsi / character / soundtrack tabs, plus the cinema-mode
+          button pinned to the right edge (in line with the stat cards).
+          On narrow phones the tabs scroll sideways rather than pushing that
+          button onto a line of its own. */}
+      <div className="mt-8 flex items-center gap-2 px-2 sm:px-0">
+        <div className="-my-1 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-1 [scrollbar-width:none]">
+          {DETAIL_TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() =>
+                setSearchParams(t.key === "deskripsi" ? {} : { tab: t.key }, {
+                  replace: true,
+                })
+              }
+              style={tabStyle(tab === t.key)}
+              className="shrink-0 cursor-pointer rounded-full px-3 py-[5px] text-[13.5px] font-medium text-zinc-900 transition hover:opacity-80 sm:px-4 sm:py-1.5 sm:text-sm"
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "lagu" && (
           <button
-            key={t.key}
             type="button"
             onClick={() =>
-              setSearchParams(t.key === "deskripsi" ? {} : { tab: t.key }, {
-                replace: true,
+              themesPanelRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
               })
             }
-            style={tabStyle(tab === t.key)}
-            className="cursor-pointer rounded-full px-3.5 py-1.5 text-sm font-medium text-zinc-900 transition hover:opacity-80 sm:px-4 sm:py-1.5 sm:text-sm"
+            aria-label="Mode sinema"
+            title="Mode sinema"
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition hover:opacity-70 sm:mr-2 sm:h-10 sm:w-10"
           >
-            {t.label}
+            <span
+              aria-hidden
+              className="inline-block h-[26px] w-[26px] bg-gradient-to-br from-pink-400 to-violet-600 sm:h-7 sm:w-7"
+              style={iconMaskStyle(CINEMA_ICON)}
+            />
           </button>
-        ))}
+        )}
       </div>
 
       {tab === "character" && (
@@ -629,6 +682,13 @@ export default function AnimeDetail() {
         </div>
       )}
 
+      {/* opening/ending songs — only fetched once this tab is opened */}
+      {tab === "lagu" && (
+        <div className="mt-10 px-2 sm:px-0">
+          <AnimeThemes ref={themesPanelRef} anilistId={anime.mal_id} />
+        </div>
+      )}
+
       {/* synopsis + metadata */}
       {tab === "deskripsi" && (
         <div className="mt-10 grid gap-10 px-2 sm:px-0 sm:pl-4 lg:grid-cols-[1fr_260px]">
@@ -655,16 +715,7 @@ export default function AnimeDetail() {
                     <span
                       aria-hidden
                       className="inline-block h-7 w-7 bg-gradient-to-br from-pink-400 to-violet-600"
-                      style={{
-                        WebkitMaskImage: `url(${translateIcon})`,
-                        maskImage: `url(${translateIcon})`,
-                        WebkitMaskSize: "contain",
-                        maskSize: "contain",
-                        WebkitMaskRepeat: "no-repeat",
-                        maskRepeat: "no-repeat",
-                        WebkitMaskPosition: "center",
-                        maskPosition: "center",
-                      }}
+                      style={iconMaskStyle(translateIcon)}
                     />
                   )}
                 </button>
