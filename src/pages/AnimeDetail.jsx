@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getAnimeById, getAnimeCharactersPage } from "../lib/anilist";
+import { fuzzyFilter } from "../lib/fuzzySearch";
 import { gradientBorderStyle } from "../lib/gradientBorder";
 import { useMetaTags } from "../lib/useMetaTags";
 import { translateText } from "../lib/translate";
@@ -552,13 +553,21 @@ export default function AnimeDetail() {
                     ]),
                   ).values(),
                 );
-                const filteredCharacters = hasSearchQuery
+                // exact (substring) matches first; only when there are none
+                // does it fall back to typo-tolerant matching, so "megumn"
+                // or "kazuma sato" still find Megumin / Kazuma Satou
+                const exactCharacters = hasSearchQuery
                   ? characterPool.filter((c) =>
                       c.name
                         ?.toLowerCase()
                         .includes(characterSearch.trim().toLowerCase()),
                     )
-                  : anime.characters.slice(0, characterLimit);
+                  : [];
+                const filteredCharacters = !hasSearchQuery
+                  ? anime.characters.slice(0, characterLimit)
+                  : exactCharacters.length
+                    ? exactCharacters
+                    : fuzzyFilter(characterSearch, characterPool, (c) => c.name);
 
                 if (!filteredCharacters.length) {
                   return (

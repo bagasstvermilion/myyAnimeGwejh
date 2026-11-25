@@ -227,13 +227,40 @@ function correctionFor({ name, spans }) {
   return parts.join(' ')
 }
 
+function parseQuery(query) {
+  const words = normalizeWords(query).split(' ').filter(Boolean)
+  const maxTotal = queryBudget(words.reduce((sum, w) => sum + w.length, 0))
+  return { words, maxTotal }
+}
+
+// typo-tolerant filter for a list that's already in memory (e.g. an anime's
+// cast): the items whose name is close enough to the query, best match
+// first, ties kept in their original order. Anything clearly worse than the
+// best match is dropped — "yun yun" should find Yunyun, not also Luna just
+// because "yun" is one letter off "lun".
+export function fuzzyFilter(query, items, getName) {
+  const { words, maxTotal } = parseQuery(query)
+  if (!maxTotal) return []
+
+  const matches = items
+    .map((item, order) => {
+      const name = getName(item)
+      const hit = name && matchName(words, prepareName(name), maxTotal)
+      return hit && { item, order, score: hit.score }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.score - b.score || a.order - b.order)
+
+  const cutoff = (matches[0]?.score ?? 0) + 1
+  return matches.filter((m) => m.score <= cutoff).map((m) => m.item)
+}
+
 // best guess at which title(s) a query that found nothing was meant to be.
 // Returns null when nothing is close enough; otherwise
 //   correctedQuery — the query rewritten to the closest title's spelling
 //   ids          — AniList ids of the closest titles, best first
 export async function findSimilarTitles(query, limit = 24) {
-  const words = normalizeWords(query).split(' ').filter(Boolean)
-  const maxTotal = queryBudget(words.reduce((sum, w) => sum + w.length, 0))
+  const { words, maxTotal } = parseQuery(query)
   if (!maxTotal) return null
 
   const index = await loadIndex()

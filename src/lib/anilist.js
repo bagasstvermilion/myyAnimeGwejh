@@ -80,6 +80,41 @@ const STATUS_LABELS = {
   HIATUS: 'On Hiatus',
 }
 
+const FORMAT_LABELS = Object.fromEntries(FORMATS.map((f) => [f.value, f.label]))
+
+const SOURCE_LABELS = {
+  ORIGINAL: 'Original',
+  MANGA: 'Manga',
+  LIGHT_NOVEL: 'Light Novel',
+  VISUAL_NOVEL: 'Visual Novel',
+  VIDEO_GAME: 'Video Game',
+  NOVEL: 'Novel',
+  WEB_NOVEL: 'Web Novel',
+  DOUJINSHI: 'Doujinshi',
+  ANIME: 'Anime',
+  LIVE_ACTION: 'Live Action',
+  GAME: 'Game',
+  COMIC: 'Comic',
+  MULTIMEDIA_PROJECT: 'Multimedia Project',
+  PICTURE_BOOK: 'Picture Book',
+  OTHER: 'Other',
+}
+
+// AniList enum values come back as e.g. "LIGHT_NOVEL" — look up a readable
+// label, falling back to "Light Novel"-style casing for any value AniList
+// adds later that isn't in the map yet
+function enumLabel(labels, value) {
+  if (!value) return value
+  return (
+    labels[value] ??
+    value
+      .toLowerCase()
+      .split('_')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
+  )
+}
+
 function stripHtml(html) {
   if (!html) return ''
   return html.replace(/<[^>]*>/g, '').trim()
@@ -145,13 +180,13 @@ function normalize(media) {
     },
     banner: media.bannerImage,
     score: media.averageScore ? (media.averageScore / 10).toFixed(1) : null,
-    type: media.format,
+    type: enumLabel(FORMAT_LABELS, media.format),
     episodes: media.episodes,
-    status: STATUS_LABELS[media.status] || media.status,
+    status: enumLabel(STATUS_LABELS, media.status),
     genres: media.genres?.map((name) => ({ mal_id: name, name })) ?? [],
     synopsis: stripHtml(media.description),
     studios: media.studios?.nodes ?? [],
-    source: media.source,
+    source: enumLabel(SOURCE_LABELS, media.source),
     duration: media.duration ? `${media.duration} min per ep` : null,
     rank: allTimeRank,
     aired: {
