@@ -185,7 +185,7 @@ export default function CharacterDetail() {
           <div className="mb-4 flex shrink-0 flex-col items-end">
             {character.voiceActor && (
               <span className="mt-3 text-right text-xs text-zinc-400">
-                VA. {character.voiceActor.name}
+                CV. {character.voiceActor.name}
                 {character.voiceActor.nativeName &&
                   `/${character.voiceActor.nativeName}`}
               </span>
@@ -264,7 +264,7 @@ export default function CharacterDetail() {
           />
           {character.voiceActor && (
             <span className="absolute right-12 top-12 text-sm text-white/50">
-              VA. {character.voiceActor.name}
+              CV. {character.voiceActor.name}
               {character.voiceActor.nativeName &&
                 `/${character.voiceActor.nativeName}`}
             </span>
