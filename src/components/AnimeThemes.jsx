@@ -26,6 +26,18 @@ const RESTART_THRESHOLD = 3;
 // error — so a failed video is retried after these waits before giving up
 const RETRY_DELAYS = [2000, 5000, 10000];
 
+// a slow server doesn't raise any error: Chrome fires "playing" right away
+// and then sits on the first frame while it fetches the file's index from
+// the end and the first chunk (a few serial requests, ~1s or more each),
+// without even a "waiting" event. So the player watches the clock itself:
+// time frozen while the browser is still downloading means it's loading.
+// The overlay goes the moment the clock moves again.
+const STALL_TICK_MS = 200;
+const STALL_SHOW_MS = 800; // frozen this long → show the loading overlay
+const STALL_SLOW_MS = 6000; // frozen this long in all → say the server is slow
+const STALL_CLEAR_MS = 1200; // smooth playback this long → that total resets
+const STALL_RETRY_MS = 20000; // frozen this long in one go → reload the video
+
 // what happens when a song finishes — one button cycles through these:
 // stop (grey shuffle) → shuffle (violet) → repeat this song → stop
 const PLAY_MODES = {
@@ -238,6 +250,8 @@ export default function AnimeThemes({ anilistId, ref }) {
   const [failedEntryId, setFailedEntryId] = useState(null);
   // true while waiting to retry a video the server turned away
   const [retrying, setRetrying] = useState(false);
+  // 0 = fine, 1 = loading, 2 = loading for a long while (see STALL_*)
+  const [stall, setStall] = useState(0);
   // progress-bar position while it's being dragged (null otherwise)
   const [scrubTime, setScrubTime] = useState(null);
   // spoiler-flagged songs stay blurred until picked
@@ -260,6 +274,70 @@ export default function AnimeThemes({ anilistId, ref }) {
     }
     document.addEventListener("fullscreenchange", handleChange);
     return () => document.removeEventListener("fullscreenchange", handleChange);
+  }, []);
+
+  // stall watch (see STALL_*). "Wants to play" = playing, or a freshly
+  // picked song waiting for autoplay; it only counts as loading while the
+  // browser is actually fetching, so a video that's just waiting for a tap
+  // (e.g. iOS blocking autoplay) doesn't get a spinner
+  useEffect(() => {
+    let video = null;
+    let last = 0;
+    let frozenMs = 0; // stuck on one frame (any movement resets it)
+    let smoothMs = 0; // playing without a hitch since the last freeze
+    let waitedMs = 0; // frozen time in all, across short bursts of playback
+    const timer = setInterval(() => {
+      // background tabs throttle timers and may hold muted video back
+      if (document.hidden) return;
+      const v = videoRef.current;
+      if (v !== video) {
+        video = v;
+        last = v?.currentTime ?? 0;
+        frozenMs = smoothMs = waitedMs = 0;
+      }
+      if (!v) {
+        setStall(0);
+        return;
+      }
+
+      const advanced = v.currentTime - last;
+      last = v.currentTime;
+      const wantsToPlay =
+        !v.paused ||
+        (v.autoplay && v.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA);
+      const fetching = v.networkState === HTMLMediaElement.NETWORK_LOADING;
+      // Chrome nudges the clock by a hair (even backwards) while buffering,
+      // so tiny changes count as standing still; a tick of real playback
+      // moves it ~0.2s
+      const still = Math.abs(advanced) < 0.05;
+      const stuck = still && wantsToPlay && fetching;
+      // normal playback, not a seek jump
+      const moving = advanced >= 0.05 && advanced < 1;
+
+      frozenMs = stuck ? frozenMs + STALL_TICK_MS : 0;
+      smoothMs = moving ? smoothMs + STALL_TICK_MS : 0;
+      // the server is answering again
+      if (moving) retryRef.current.attempts = 0;
+
+      // on a slow connection playback creeps along in short bursts — the
+      // frozen time adds up across those, so the "slow server" text doesn't
+      // start over at every burst; only smooth playback clears it
+      if (!wantsToPlay || (!stuck && !moving) || smoothMs >= STALL_CLEAR_MS) {
+        waitedMs = 0;
+      } else if (stuck) {
+        waitedMs += STALL_TICK_MS;
+      }
+
+      if (frozenMs >= STALL_RETRY_MS) {
+        frozenMs = waitedMs = 0;
+        // hand it to the same retry path as a failed load (onError)
+        v.dispatchEvent(new Event("error"));
+      }
+      setStall(
+        frozenMs < STALL_SHOW_MS ? 0 : waitedMs >= STALL_SLOW_MS ? 2 : 1,
+      );
+    }, STALL_TICK_MS);
+    return () => clearInterval(timer);
   }, []);
 
   // loading and the song list render inside a full-height shell, so the
@@ -297,7 +375,6 @@ export default function AnimeThemes({ anilistId, ref }) {
   }
 
   const themes = data?.themes ?? [];
-  const sourceUrl = data?.siteUrl || "https://animethemes.moe";
 
   if (!themes.length) {
     return shell(
@@ -464,26 +541,16 @@ export default function AnimeThemes({ anilistId, ref }) {
           {failed ? (
             <div className="flex aspect-video flex-col items-center justify-center gap-3 p-6 text-center">
               <p className="max-w-sm text-sm text-white/80">
-                Server video AnimeThemes lagi sibuk, jadi videonya belum bisa
-                dimuat. Tunggu sebentar lalu coba lagi.
+                Server video lagi sibuk, jadi videonya belum bisa dimuat.
+                Tunggu sebentar lalu coba lagi.
               </p>
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={retryNow}
-                  className="cursor-pointer rounded-full bg-white px-4 py-1.5 text-sm font-medium text-zinc-900 transition hover:opacity-80"
-                >
-                  Coba lagi
-                </button>
-                <a
-                  href={sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm font-medium text-violet-300 underline"
-                >
-                  Buka di AnimeThemes
-                </a>
-              </div>
+              <button
+                type="button"
+                onClick={retryNow}
+                className="cursor-pointer rounded-full bg-white px-4 py-1.5 text-sm font-medium text-zinc-900 transition hover:opacity-80"
+              >
+                Coba lagi
+              </button>
             </div>
           ) : (
             <>
@@ -517,17 +584,20 @@ export default function AnimeThemes({ anilistId, ref }) {
                   setRetrying(false);
                   setMediaDuration(video.duration);
                 }}
-                onPlaying={() => {
-                  retryRef.current = { entryId: currentEntry.id, attempts: 0 };
-                }}
+                // (the retry count resets in the stall watch once time really
+                // moves — "playing" fires before any data has arrived)
                 onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
                 onError={handleVideoError}
                 className="aspect-video w-full cursor-pointer"
               />
-              {retrying && (
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 text-sm text-white/80">
+              {(retrying || stall > 0) && (
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/50 px-6 text-center text-sm text-white/80">
                   <span className="h-7 w-7 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                  Menunggu server video…
+                  {retrying
+                    ? "Menunggu server video…"
+                    : stall > 1
+                      ? "Server video lagi lambat, tunggu sebentar…"
+                      : "Memuat video…"}
                 </div>
               )}
               <button
