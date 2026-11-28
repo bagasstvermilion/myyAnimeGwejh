@@ -86,6 +86,16 @@ function episodeSpan(episodes) {
   return first === last ? `Eps ${first}` : `Eps ${first}–${last}`;
 }
 
+// the video's length once the browser knows it, else 0. Safari (iPhone)
+// sometimes hasn't worked out a WebM's length yet at "loadedmetadata"
+// (NaN/Infinity there) and only reports it later — so the player re-reads
+// it on durationchange and timeupdate too. AnimeThemes' API doesn't list
+// lengths, so the browser is the only source.
+function knownDuration(video) {
+  const d = video.duration;
+  return Number.isFinite(d) && d > 0 ? d : 0;
+}
+
 function formatDuration(seconds) {
   const total = Math.round(seconds);
   const h = Math.floor(total / 3600);
@@ -582,11 +592,19 @@ export default function AnimeThemes({ anilistId, ref }) {
                     resumeAtRef.current = 0;
                   }
                   setRetrying(false);
-                  setMediaDuration(video.duration);
+                  setMediaDuration(knownDuration(video));
                 }}
+                onDurationChange={(e) =>
+                  setMediaDuration(knownDuration(e.currentTarget))
+                }
                 // (the retry count resets in the stall watch once time really
                 // moves — "playing" fires before any data has arrived)
-                onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                onTimeUpdate={(e) => {
+                  const video = e.currentTarget;
+                  setCurrentTime(video.currentTime);
+                  // last resort if no event carried the length
+                  if (!mediaDuration) setMediaDuration(knownDuration(video));
+                }}
                 onError={handleVideoError}
                 className="aspect-video w-full cursor-pointer"
               />
